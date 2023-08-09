@@ -7,5 +7,9 @@ use super::model::credit_card::CreditCardEntry;
 pub mod picpay;
 
 pub trait CreditCardExtractor {
-    fn extract_entries(data: impl Read, month: u32, year: u32) -> Result<Vec<CreditCardEntry>, Error>;
+    fn extract_entries(
+        data: impl Read,
+        month: u32,
+        year: u32,
+    ) -> Result<Vec<CreditCardEntry>, Error>;
 }
