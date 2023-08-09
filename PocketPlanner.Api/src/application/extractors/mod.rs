@@ -5,8 +5,9 @@ use anyhow::Error;
 use super::model::credit_card::CreditCardEntry;
 
 pub mod picpay;
+pub mod nubank;
 
-pub trait CreditCardExtractor {
+pub trait CreditCardInvoiceFileExtractor {
     fn extract_entries(
         data: impl Read,
         month: u32,

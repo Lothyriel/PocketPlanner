@@ -6,7 +6,7 @@ mod tests {
     use chrono::Datelike;
     use rust_decimal::Decimal;
 
-    use pocket_planner::application::extractors::{picpay::Picpay, CreditCardExtractor};
+    use pocket_planner::application::extractors::{picpay::Picpay, CreditCardInvoiceFileExtractor};
 
     #[test]
     fn picpay_extraction() -> Result<(), Error> {

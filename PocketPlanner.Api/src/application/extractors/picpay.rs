@@ -6,11 +6,11 @@ use lopdf::Document;
 
 use crate::{application::model::credit_card::CreditCardEntry, extensions::chrono::NaiveDateExt};
 
-use super::CreditCardExtractor;
+use super::CreditCardInvoiceFileExtractor;
 
 pub struct Picpay;
 
-impl CreditCardExtractor for Picpay {
+impl CreditCardInvoiceFileExtractor for Picpay {
     fn extract_entries(
         data: impl Read,
         month: u32,
