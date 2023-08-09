@@ -12,7 +12,7 @@ mod tests {
     fn picpay_extraction() -> Result<(), Error> {
         let file = File::open("tests/data/picpay_fatura_teste.pdf")?;
 
-        let info = Picpay::extract_entries(file, chrono::Utc::now().year())?;
+        let info = Picpay::extract_entries(file, 08, 2023)?;
 
         assert_eq!(info.len(), 2);
 
