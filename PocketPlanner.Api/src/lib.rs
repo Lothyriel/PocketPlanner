@@ -1,2 +1,2 @@
 pub mod application;
-mod extensions;
+pub mod extensions;
