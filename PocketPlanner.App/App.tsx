@@ -1,20 +1,29 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { BottomTabNavigationProp, createBottomTabNavigator } from '@react-navigation/bottom-tabs'
+import { NavigationContainer } from '@react-navigation/native'
+import { FontAwesome5 } from '@expo/vector-icons'
+import Summary from './Screens/Summary'
+import Extract from './Screens/Extract'
+
+const Tab = createBottomTabNavigator<Routes>()
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
+    <NavigationContainer>
+      <Tab.Navigator backBehavior='history' screenOptions={{ headerShown: false }}>
+        <Tab.Screen name="Summary" component={Summary} options={{
+          tabBarIcon: () => <FontAwesome5 name="receipt" size={24} color="black" />
+        }} />
+        <Tab.Screen name="Extract" component={Extract} options={{
+          tabBarIcon: () => <FontAwesome5 name="file-import" size={24} color="black" />
+        }} />
+      </Tab.Navigator>
+    </NavigationContainer>
+  )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export type Routes = {
+  "Summary": undefined
+  "Extract": undefined
+}
+
+export type Navigation = BottomTabNavigationProp<Routes, 'Summary'>
