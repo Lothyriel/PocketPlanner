@@ -1,8 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use anyhow::Error;
+    use pocket_planner::application::extractors::ExtractError;
+
     #[test]
-    fn nubank_extraction() -> Result<(), Error> {
+    fn nubank_extraction() -> Result<(), ExtractError> {
         Ok(())
     }
 }
