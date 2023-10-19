@@ -23,7 +23,6 @@ const styles = StyleSheet.create({
     padding: '4%',
   },
   invoices: {
-    backgroundColor: 'grey',
     flex: 12,
   }
 })
