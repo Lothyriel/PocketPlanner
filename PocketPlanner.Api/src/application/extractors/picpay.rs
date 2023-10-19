@@ -1,27 +1,28 @@
 use std::io::Read;
 
-use anyhow::{anyhow, Error};
-use chrono::{Datelike, NaiveDate};
+use chrono::NaiveDate;
 use lopdf::Document;
 
-use crate::{application::model::credit_card::CreditCardEntry, extensions::chrono::NaiveDateExt};
+use crate::{
+    application::{extractors::ParsingError, model::credit_card::CreditCardEntry},
+    extensions::chrono::NaiveDateExt,
+};
 
-use super::CreditCardInvoiceFileExtractor;
+use super::{CreditCardInvoiceFileExtractor, ExtractError};
 
 pub struct Picpay;
 
 impl CreditCardInvoiceFileExtractor for Picpay {
     fn extract_entries(
         data: impl Read,
-        month: u32,
-        year: u32,
-    ) -> Result<Vec<CreditCardEntry>, Error> {
+        expected: NaiveDate,
+    ) -> Result<Vec<CreditCardEntry>, ExtractError> {
         const HEADER_PAGES_COUNT: u32 = 2;
         const FOOTER_PAGES_COUNT: u32 = 2;
 
         let document = Document::load_from(data)?;
 
-        validate_invoice_date(&document, month, year)?;
+        validate_invoice_date(&document, expected)?;
 
         let pages_number = document
             .get_pages()
@@ -46,7 +47,7 @@ impl CreditCardInvoiceFileExtractor for Picpay {
         let entries = lines
             .chunks_exact(3)
             .flat_map(|chunk| {
-                let date = format!("{}/{}", chunk[0], year);
+                let date = format!("{}/{}", chunk[0], 1);
                 CreditCardEntry::try_from_chunk(&date, &chunk[1], &chunk[2])
             })
             .collect();
@@ -55,22 +56,24 @@ impl CreditCardInvoiceFileExtractor for Picpay {
     }
 }
 
-fn validate_invoice_date(document: &Document, month: u32, year: u32) -> Result<(), Error> {
+fn validate_invoice_date(document: &Document, expected: NaiveDate) -> Result<(), ExtractError> {
     const IGNORE_LINES_FIRST_PAGE_COUNT: usize = 3;
 
     let first_page = document.extract_text(&[1]).unwrap_or_default();
 
     let date_text = first_page
         .split('\n')
-        .skip(IGNORE_LINES_FIRST_PAGE_COUNT)
-        .next()
-        .ok_or_else(|| anyhow!("Data not in expected form"))?;
+        .nth(IGNORE_LINES_FIRST_PAGE_COUNT)
+        .ok_or(ParsingError::MissingData)?;
 
-    let matches: &[_] = &[' ', '|'];
-    let due_date = NaiveDate::from_str_pt(date_text.trim_matches(matches), '-')?;
+    let matches = [' ', '|'];
+    let due_date = NaiveDate::from_str_pt(date_text.trim_matches(matches.as_slice()), '-')?;
 
-    if due_date.month() != month || due_date.year() != year as i32 {
-        return Err(anyhow!("This invoice is from {}/{}", month, year));
+    if due_date == expected {
+        return Err(ExtractError::InvalidInvoiceDate {
+            got: due_date,
+            expected,
+        });
     }
 
     Ok(())
