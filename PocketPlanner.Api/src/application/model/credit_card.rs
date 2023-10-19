@@ -1,8 +1,7 @@
-use anyhow::Error;
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 
-use crate::extensions::chrono::NaiveDateExt;
+use crate::{application::extractors::ParsingError, extensions::chrono::NaiveDateExt};
 
 pub struct CreditCardEntry {
     pub date: NaiveDate,
@@ -11,11 +10,15 @@ pub struct CreditCardEntry {
 }
 
 impl CreditCardEntry {
-    pub fn try_from_chunk(date: &str, description: &str, value: &str) -> Result<Self, Error> {
+    pub fn try_from_chunk(
+        date: &str,
+        description: &str,
+        value: &str,
+    ) -> Result<Self, ParsingError> {
         Ok(Self {
             date: NaiveDate::from_str_pt(date, '/')?,
             description: description.to_owned(),
-            value: Decimal::from_str_exact(&value.replace(",", "."))?,
+            value: Decimal::from_str_exact(&value.replace(',', "."))?,
         })
     }
 }
