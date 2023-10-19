@@ -10,14 +10,20 @@ pub trait NaiveDateExt {
 
 impl NaiveDateExt for NaiveDate {
     fn from_str_pt(date: &str, separator: char) -> Result<NaiveDate, ParsingError> {
-        let segments: Vec<_> = date.split(separator).collect();
+        let mut segments = date.split(separator);
 
-        if segments.len() != 3 {
-            return Err(ParsingError::MissingData);
-        }
+        let day = get_segment(segments.next())?;
 
-        let date = format!("{}-{}-{}", segments[2], segments[1], segments[0]);
+        let month = get_segment(segments.next())?;
+
+        let year = get_segment(segments.next())?;
+
+        let date = format!("{}-{}-{}", year, month, day);
 
         Ok(NaiveDate::from_str(&date)?)
     }
+}
+
+fn get_segment(segment: Option<&str>) -> Result<&str, ParsingError> {
+    segment.ok_or(ParsingError::MissingData)
 }
