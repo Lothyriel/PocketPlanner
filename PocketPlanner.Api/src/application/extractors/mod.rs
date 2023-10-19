@@ -1,6 +1,6 @@
 use std::io::Read;
 
-use anyhow::Error;
+use chrono::NaiveDate;
 
 use super::model::credit_card::CreditCardEntry;
 
@@ -10,7 +10,26 @@ pub mod picpay;
 pub trait CreditCardInvoiceFileExtractor {
     fn extract_entries(
         data: impl Read,
-        month: u32,
-        year: u32,
-    ) -> Result<Vec<CreditCardEntry>, Error>;
+        expected: NaiveDate,
+    ) -> Result<Vec<CreditCardEntry>, ExtractError>;
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ExtractError {
+    #[error("Expected invoice from {expected} got {got}")]
+    InvalidInvoiceDate { expected: NaiveDate, got: NaiveDate },
+    #[error("{0}")]
+    Pdf(#[from] lopdf::Error),
+    #[error("{0}")]
+    Parsing(#[from] ParsingError),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ParsingError {
+    #[error("Data was misssing")]
+    MissingData,
+    #[error("{0}")]
+    DecimalParsing(#[from] rust_decimal::Error),
+    #[error("{0}")]
+    DateParsing(#[from] chrono::format::ParseError),
 }
