@@ -8,18 +8,18 @@ use crate::{
     extensions::chrono::NaiveDateExt,
 };
 
-use super::{CreditCardInvoiceFileExtractor, ExtractError};
+use super::{CreditCardInvoiceExtractor, ExtractError};
 
 pub struct Picpay;
 
-impl CreditCardInvoiceFileExtractor for Picpay {
+const HEADER_PAGES_COUNT: u32 = 2;
+const FOOTER_PAGES_COUNT: u32 = 2;
+
+impl CreditCardInvoiceExtractor for Picpay {
     fn extract_entries(
         data: impl Read,
         expected: NaiveDate,
     ) -> Result<Vec<CreditCardEntry>, ExtractError> {
-        const HEADER_PAGES_COUNT: u32 = 2;
-        const FOOTER_PAGES_COUNT: u32 = 2;
-
         let document = Document::load_from(data)?;
 
         validate_invoice_date(&document, expected)?;
