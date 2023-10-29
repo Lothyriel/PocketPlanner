@@ -15,7 +15,8 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lothyriel.pocketplanner"
     },
     "android": {
       "softwareKeyboardLayoutMode": "pan",
@@ -30,7 +31,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "502e078e-5291-4ff0-b5e8-6f62b00542c2"
+        "projectId": "7c93f099-31f4-45f7-b3a7-6749229f0944"
       }
     }
   }
