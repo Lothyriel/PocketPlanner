@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "PocketPlanner.App",
-    "slug": "PocketPlanner.App",
+    "slug": "pocket-planner",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -22,10 +22,16 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.lothyriel.pocketplanner"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "502e078e-5291-4ff0-b5e8-6f62b00542c2"
+      }
     }
   }
 }
