@@ -53,7 +53,7 @@ export default function() {
   if (user) {
     return (
       <View style={styles.container}>
-        <Text style={{ fontSize: 20, marginBottom: 10 }}> Seja Bem Vindo ✌ </Text>
+        <Text style={{ fontSize: 20, marginBottom: 10 }}> Seja Bem Vindo</Text>
 
         <Image
           source={{
@@ -66,7 +66,7 @@ export default function() {
 
         <Text style={{ marginTop: 10, fontSize: 17 }}> {user.name} </Text>
 
-        <Text style={{ marginBottom: 20 }} > {user.email} </Text>
+        <Text style={{ marginBottom: 20 }}> {user.email} </Text>
 
         <Button title='Sair' onPress={() => setUser(null)} />
       </View>
@@ -91,5 +91,5 @@ const styles = StyleSheet.create({
   title: {
     marginBottom: 10,
     fontSize: 20,
-  },
+  }
 })
