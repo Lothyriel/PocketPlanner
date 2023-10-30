@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
-    "start": "expo start",
-    "dev": "expo start --dev-client",
+    "start": "expo start --dev-client",
+    "build": "eas build --profile development --platform android",
+    "preview": "eas build --profile preview --platform android",
+    "web": "expo start --web",
     "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "expo start --web"
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "@react-native-masked-view/masked-view": "0.2.9",
