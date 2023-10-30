@@ -2,6 +2,7 @@
   "expo": {
     "name": "PocketPlanner.App",
     "slug": "pocket-planner",
+    "scheme": "pocketplanner",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -35,7 +36,19 @@
       }
     },
     "plugins": [
-      "expo-build-properties"
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 33,
+            "targetSdkVersion": 33,
+            "buildToolsVersion": "33.0.0"
+          },
+          "ios": {
+            "deploymentTarget": "13.0"
+          }
+        }
+      ]
     ]
   }
 }
