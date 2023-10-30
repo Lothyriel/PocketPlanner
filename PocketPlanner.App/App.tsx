@@ -2,6 +2,8 @@ import { NavigationContainer } from '@react-navigation/native'
 import { StackNavigationProp, createStackNavigator } from '@react-navigation/stack'
 import Home from './Screens/Home/Home'
 import Authentication from './Screens/Authentication'
+import { StatusBar } from 'expo-status-bar'
+import './polyfills'
 
 const Stack = createStackNavigator<AppRoutes>()
 
@@ -19,6 +21,7 @@ export default function App() {
         <Stack.Screen name="Authentication" component={Authentication} />
         <Stack.Screen name="Home" component={Home} />
       </Stack.Navigator>
+      <StatusBar style='auto' />
     </NavigationContainer>
   )
 }
