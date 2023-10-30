@@ -3,18 +3,23 @@ import * as WebBrowser from 'expo-web-browser'
 import * as Google from 'expo-auth-session/providers/google'
 import { useEffect, useState } from 'react'
 import { StatusBar } from 'expo-status-bar'
+import { jwtDecode } from 'jwt-decode'
+import { TokenResponse } from 'expo-auth-session'
 
 WebBrowser.maybeCompleteAuthSession()
 
-type User = {
+type UserInfo = {
   email: string,
   name: string,
-  picture: string
+  picture: string,
+  locale: string
 }
 
 export default function() {
-  const [accessToken, setAccessToken] = useState<string | null>(null)
-  const [user, setUser] = useState<User | null>(null)
+  const [auth, setAccessToken] = useState<TokenResponse | null>(null)
+
+  const [user, setUser] = useState<UserInfo | null>(null)
+
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     clientId: '824653628296-ahr9jr3aqgr367mul4p359dj4plsl67a.apps.googleusercontent.com',
     iosClientId: '824653628296-5a4hseol33ep0vvo5tg29m39ib4src71.apps.googleusercontent.com',
@@ -26,31 +31,25 @@ export default function() {
       return
     }
 
-    alert(JSON.stringify(response))
-
     switch (response.type) {
       case 'success':
-        const auth = response.authentication?.accessToken ?? null
+        const auth = response.authentication
+
+        if (!auth) {
+          throw "Success without auth"
+        }
+
         setAccessToken(auth)
 
-        accessToken && fetchUserInfo()
+        if (!auth.idToken) {
+          throw "Auth without token"
+        }
+
+        setUser(jwtDecode<UserInfo>(auth.idToken))
+
         break
     }
-  }, [response, accessToken])
-
-  async function fetchUserInfo() {
-    const params = {
-      headers: {
-        Authorization: `Bearer ${accessToken}`
-      }
-    }
-
-    const response = await fetch('https://www.googleapis.com/userinfo/v2/me', params)
-
-    const userInfo = await response.json()
-
-    setUser(userInfo)
-  }
+  }, [response])
 
   if (user) {
     return (
@@ -66,13 +65,11 @@ export default function() {
           borderRadius={40}
         />
 
-        <Text style={{ marginTop: 10, fontSize: 17 }} > {user.name} </Text>
+        <Text style={{ marginTop: 10, fontSize: 17 }}> {user.name} </Text>
 
         <Text style={{ marginBottom: 20 }} > {user.email} </Text>
 
         <Button title='Sair' onPress={() => setUser(null)} />
-
-        <StatusBar style='auto' />
       </View>
     )
   }
@@ -81,7 +78,6 @@ export default function() {
     <View style={styles.container}>
       <Text style={styles.title}>Login com Google</Text>
       <Button title='Entrar' disabled={!request} onPress={() => promptAsync()} />
-      <StatusBar style='auto' />
     </View>
   )
 }
