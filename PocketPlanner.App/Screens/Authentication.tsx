@@ -1,10 +1,9 @@
 import { View, StyleSheet, Button, Text, Image } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
 import * as Google from 'expo-auth-session/providers/google'
-import { useEffect, useState } from 'react'
-import { StatusBar } from 'expo-status-bar'
-import { jwtDecode } from 'jwt-decode'
 import { TokenResponse } from 'expo-auth-session'
+import { useEffect, useState } from 'react'
+import { jwtDecode } from 'jwt-decode'
 
 WebBrowser.maybeCompleteAuthSession()
 
