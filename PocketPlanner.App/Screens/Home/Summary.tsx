@@ -1,6 +1,6 @@
-import { View, StyleSheet } from "react-native"
-import { TextInput } from 'react-native-paper';
-import { colors } from "../colors"
+import { View, StyleSheet } from 'react-native'
+import { TextInput } from 'react-native-paper'
+import { colors } from '../../colors'
 
 export default function() {
   return (
