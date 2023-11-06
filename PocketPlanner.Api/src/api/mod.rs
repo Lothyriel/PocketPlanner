@@ -1,4 +1,6 @@
+mod auth;
 mod calculations;
+mod user;
 
 use axum::{routing, Router};
 
@@ -9,5 +11,10 @@ pub fn router() -> axum::Router {
 }
 
 fn get_api_router() -> Router {
-    Router::new().nest("/calculations", calculations::router())
+    Router::new()
+        .nest("/calculations", calculations::router())
+        .nest(
+            "/user",
+            user::router().route_layer(axum::middleware::from_fn(auth::auth)),
+        )
 }
