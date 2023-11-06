@@ -6,7 +6,7 @@ use axum::{
 };
 
 use axum_extra::extract::cookie::CookieJar;
-use jsonwebtoken::{DecodingKey, Validation};
+use jsonwebtoken as jwt;
 
 #[derive(thiserror::Error, serde::Serialize, Debug)]
 pub enum AuthError {
@@ -58,8 +58,7 @@ async fn get_email<B>(cookie_jar: CookieJar, req: &mut Request<B>) -> Result<(),
 
     let token = token.ok_or(TokenError::NotPresent)?;
 
-    let header =
-        jsonwebtoken::decode_header(&token).map_err(|e| TokenError::Validation(e.to_string()))?;
+    let header = jwt::decode_header(token).map_err(|e| TokenError::Validation(e.to_string()))?;
 
     let kid = header.kid.ok_or(TokenError::InvalidKid)?;
 
@@ -77,10 +76,10 @@ async fn get_email<B>(cookie_jar: CookieJar, req: &mut Request<B>) -> Result<(),
 }
 
 fn get_claims(
-    token: String,
-    jwk: &jsonwebtoken::jwk::Jwk,
-) -> Result<jsonwebtoken::TokenData<TokenClaims>, jsonwebtoken::errors::Error> {
-    let mut validation = Validation::default();
+    token: &str,
+    jwk: &jwt::jwk::Jwk,
+) -> Result<jwt::TokenData<TokenClaims>, jwt::errors::Error> {
+    let mut validation = jwt::Validation::default();
 
     validation.set_issuer(&["https://accounts.google.com"]);
 
@@ -88,10 +87,10 @@ fn get_claims(
         "824653628296-g4ij9785h9c1gkbimm5af42o4l7mket3.apps.googleusercontent.com",
     ]);
 
-    jsonwebtoken::decode::<TokenClaims>(&token, &DecodingKey::from_jwk(jwk)?, &validation)
+    jwt::decode::<TokenClaims>(token, &jwt::DecodingKey::from_jwk(jwk)?, &validation)
 }
 
-async fn get_google_jwks() -> Result<jsonwebtoken::jwk::JwkSet, reqwest::Error> {
+async fn get_google_jwks() -> Result<jwt::jwk::JwkSet, reqwest::Error> {
     let response = reqwest::get("https://www.googleapis.com/oauth2/v3/certs").await?;
 
     response.json().await
