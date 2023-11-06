@@ -48,15 +48,9 @@ pub async fn auth<B>(
 async fn get_email<B>(cookie_jar: CookieJar, req: &mut Request<B>) -> Result<(), AuthError> {
     let token = cookie_jar
         .get("token")
-        .map(|cookie| cookie.value().to_owned())
-        .or_else(|| {
-            req.headers()
-                .get(header::AUTHORIZATION)
-                .and_then(|header| header.to_str().ok())
-                .and_then(|value| value.starts_with("Bearer ").then(|| value[7..].to_owned()))
-        });
-
-    let token = token.ok_or(TokenError::NotPresent)?;
+        .map(|cookie| cookie.value())
+        .or_else(|| get_token_from_headers(req))
+        .ok_or(TokenError::NotPresent)?;
 
     let header = jwt::decode_header(token).map_err(|e| TokenError::Validation(e.to_string()))?;
 
@@ -73,6 +67,13 @@ async fn get_email<B>(cookie_jar: CookieJar, req: &mut Request<B>) -> Result<(),
     req.extensions_mut().insert(token_data.claims.email);
 
     Ok(())
+}
+
+fn get_token_from_headers<B>(req: &Request<B>) -> Option<&str> {
+    req.headers()
+        .get(header::AUTHORIZATION)
+        .and_then(|header| header.to_str().ok())
+        .and_then(|value| value.starts_with("Bearer ").then(|| &value[7..]))
 }
 
 fn get_claims(
