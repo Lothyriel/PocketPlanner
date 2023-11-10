@@ -36,7 +36,7 @@ async fn get_email<B>(cookie_jar: CookieJar, req: &mut Request<B>) -> Result<(),
 
     let token_data = get_claims(token, jwk)?;
 
-    req.extensions_mut().insert(token_data.claims.email);
+    req.extensions_mut().insert(token_data.claims);
 
     Ok(())
 }
@@ -51,7 +51,7 @@ fn get_token_from_headers<B>(req: &Request<B>) -> Option<&str> {
 fn get_claims(
     token: &str,
     jwk: &jwt::jwk::Jwk,
-) -> Result<jwt::TokenData<TokenClaims>, jwt::errors::Error> {
+) -> Result<jwt::TokenData<UserClaims>, jwt::errors::Error> {
     let mut validation = jwt::Validation::default();
 
     validation.set_issuer(&["https://accounts.google.com"]);
@@ -60,7 +60,7 @@ fn get_claims(
         "824653628296-g4ij9785h9c1gkbimm5af42o4l7mket3.apps.googleusercontent.com",
     ]);
 
-    jwt::decode::<TokenClaims>(token, &jwt::DecodingKey::from_jwk(jwk)?, &validation)
+    jwt::decode::<UserClaims>(token, &jwt::DecodingKey::from_jwk(jwk)?, &validation)
 }
 
 async fn get_google_jwks() -> Result<jwt::jwk::JwkSet, reqwest::Error> {
@@ -90,9 +90,7 @@ impl From<AuthError> for (StatusCode, Json<serde_json::Value>) {
     }
 }
 
-#[derive(serde::Deserialize)]
-pub struct TokenClaims {
+#[derive(serde::Deserialize, Clone)]
+pub struct UserClaims {
     pub email: String,
-    pub iat: usize,
-    pub exp: usize,
 }
