@@ -2,71 +2,6 @@ use axum::{extract::Query, Json};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
-fn get_inss_ranges() -> [InssRange; 5] {
-    [
-        InssRange {
-            percent: dec!(7.5),
-            min: 0.into(),
-            max: 1320.into(),
-        },
-        InssRange {
-            percent: 9.into(),
-            min: dec!(1320.01),
-            max: dec!(2571.29),
-        },
-        InssRange {
-            percent: 12.into(),
-            min: dec!(2571.3),
-            max: dec!(3856.94),
-        },
-        InssRange {
-            percent: 14.into(),
-            min: dec!(3856.95),
-            max: dec!(7507.49),
-        },
-        InssRange {
-            percent: 100.into(),
-            min: dec!(7507.5),
-            max: Decimal::MAX,
-        },
-    ]
-}
-
-fn get_irrf_ranges() -> [IrrfRange; 5] {
-    [
-        IrrfRange {
-            percent: 0.into(),
-            parcel_tax: 0.into(),
-            min: 0.into(),
-            max: dec!(2112),
-        },
-        IrrfRange {
-            percent: dec!(7.5),
-            parcel_tax: dec!(158.4),
-            min: dec!(2112.01),
-            max: dec!(2826.65),
-        },
-        IrrfRange {
-            percent: 15.into(),
-            parcel_tax: dec!(370.4),
-            min: dec!(2826.66),
-            max: dec!(3751.05),
-        },
-        IrrfRange {
-            percent: dec!(22.5),
-            parcel_tax: dec!(651.73),
-            min: dec!(3751.06),
-            max: dec!(4664.68),
-        },
-        IrrfRange {
-            percent: dec!(27.5),
-            parcel_tax: dec!(884.96),
-            min: dec!(4664.69),
-            max: Decimal::MAX,
-        },
-    ]
-}
-
 #[derive(serde::Deserialize)]
 pub struct Params {
     wage: Decimal,
@@ -178,4 +113,69 @@ struct IrrfRange {
     min: Decimal,
     max: Decimal,
     parcel_tax: Decimal,
+}
+
+fn get_inss_ranges() -> [InssRange; 5] {
+    [
+        InssRange {
+            percent: dec!(7.5),
+            min: 0.into(),
+            max: 1320.into(),
+        },
+        InssRange {
+            percent: 9.into(),
+            min: dec!(1320.01),
+            max: dec!(2571.29),
+        },
+        InssRange {
+            percent: 12.into(),
+            min: dec!(2571.3),
+            max: dec!(3856.94),
+        },
+        InssRange {
+            percent: 14.into(),
+            min: dec!(3856.95),
+            max: dec!(7507.49),
+        },
+        InssRange {
+            percent: 100.into(),
+            min: dec!(7507.5),
+            max: Decimal::MAX,
+        },
+    ]
+}
+
+fn get_irrf_ranges() -> [IrrfRange; 5] {
+    [
+        IrrfRange {
+            percent: 0.into(),
+            parcel_tax: 0.into(),
+            min: 0.into(),
+            max: dec!(2112),
+        },
+        IrrfRange {
+            percent: dec!(7.5),
+            parcel_tax: dec!(158.4),
+            min: dec!(2112.01),
+            max: dec!(2826.65),
+        },
+        IrrfRange {
+            percent: 15.into(),
+            parcel_tax: dec!(370.4),
+            min: dec!(2826.66),
+            max: dec!(3751.05),
+        },
+        IrrfRange {
+            percent: dec!(22.5),
+            parcel_tax: dec!(651.73),
+            min: dec!(3751.06),
+            max: dec!(4664.68),
+        },
+        IrrfRange {
+            percent: dec!(27.5),
+            parcel_tax: dec!(884.96),
+            min: dec!(4664.69),
+            max: Decimal::MAX,
+        },
+    ]
 }
