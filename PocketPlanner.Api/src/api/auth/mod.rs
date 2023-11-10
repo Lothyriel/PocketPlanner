@@ -8,34 +8,6 @@ use axum_extra::extract::cookie::CookieJar;
 use jsonwebtoken as jwt;
 use serde_json::json;
 
-#[derive(thiserror::Error, Debug)]
-pub enum AuthError {
-    #[error("Auth token not found on the request")]
-    TokenNotPresent,
-    #[error("Invalid KeyId ('kid') on token")]
-    InvalidKid,
-    #[error("Invalid token: (0)")]
-    JwtValidation(#[from] jwt::errors::Error),
-    #[error("Error during certificate retrieval: (0)")]
-    IO(#[from] reqwest::Error),
-}
-
-impl From<AuthError> for (StatusCode, serde_json::Value) {
-    fn from(value: AuthError) -> Self {
-        (
-            StatusCode::UNAUTHORIZED,
-            json!({"error": value.to_string() }),
-        )
-    }
-}
-
-#[derive(serde::Deserialize)]
-pub struct TokenClaims {
-    pub email: String,
-    pub iat: usize,
-    pub exp: usize,
-}
-
 pub async fn auth<B>(
     cookie_jar: CookieJar,
     mut req: Request<B>,
@@ -94,4 +66,32 @@ async fn get_google_jwks() -> Result<jwt::jwk::JwkSet, reqwest::Error> {
     let response = reqwest::get("https://www.googleapis.com/oauth2/v3/certs").await?;
 
     response.json().await
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum AuthError {
+    #[error("Auth token not found on the request")]
+    TokenNotPresent,
+    #[error("Invalid KeyId ('kid') on token")]
+    InvalidKid,
+    #[error("Invalid token: (0)")]
+    JwtValidation(#[from] jwt::errors::Error),
+    #[error("Error during certificate retrieval: (0)")]
+    IO(#[from] reqwest::Error),
+}
+
+impl From<AuthError> for (StatusCode, serde_json::Value) {
+    fn from(value: AuthError) -> Self {
+        (
+            StatusCode::UNAUTHORIZED,
+            json!({"error": value.to_string() }),
+        )
+    }
+}
+
+#[derive(serde::Deserialize)]
+pub struct TokenClaims {
+    pub email: String,
+    pub iat: usize,
+    pub exp: usize,
 }
