@@ -14,6 +14,7 @@ async fn main() {
 
     let server = axum::Server::bind(&addr).serve(api::router().into_make_service());
 
+    info!("Starting API in: {}", addr);
     if let Err(err) = server.await {
         error!("{}", err);
     }
