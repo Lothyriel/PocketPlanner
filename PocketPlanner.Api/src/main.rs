@@ -1,11 +1,14 @@
 use std::net::SocketAddr;
 
-use log::error;
+use log::{error, info};
 use pocket_planner::api;
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt::init();
+    env_logger::builder()
+        .filter_level(log::LevelFilter::Info)
+        .target(env_logger::Target::Stdout)
+        .init();
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
 
