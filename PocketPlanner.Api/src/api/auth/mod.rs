@@ -2,28 +2,31 @@ use axum::{
     http::{header, Request, StatusCode},
     middleware::Next,
     response::IntoResponse,
-    Json,
 };
 
 use axum_extra::extract::cookie::CookieJar;
 use jsonwebtoken as jwt;
+use serde_json::json;
 
-#[derive(thiserror::Error, serde::Serialize, Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum AuthError {
-    #[error("(0)")]
-    Token(#[from] TokenError),
-}
-
-#[derive(thiserror::Error, serde::Serialize, Debug)]
-pub enum TokenError {
     #[error("Auth token not found on the request")]
-    NotPresent,
-    #[error("Invalid KeyId ('kid')")]
+    TokenNotPresent,
+    #[error("Invalid KeyId ('kid') on token")]
     InvalidKid,
     #[error("Invalid token: (0)")]
-    Validation(String),
+    JwtValidation(#[from] jwt::errors::Error),
     #[error("Error during certificate retrieval: (0)")]
-    IO(String),
+    IO(#[from] reqwest::Error),
+}
+
+impl From<AuthError> for (StatusCode, serde_json::Value) {
+    fn from(value: AuthError) -> Self {
+        (
+            StatusCode::UNAUTHORIZED,
+            json!({"error": value.to_string() }),
+        )
+    }
 }
 
 #[derive(serde::Deserialize)]
@@ -37,10 +40,8 @@ pub async fn auth<B>(
     cookie_jar: CookieJar,
     mut req: Request<B>,
     next: Next<B>,
-) -> Result<impl IntoResponse, (StatusCode, Json<AuthError>)> {
-    get_email(cookie_jar, &mut req)
-        .await
-        .map_err(|e| (StatusCode::UNAUTHORIZED, Json(e)))?;
+) -> Result<impl IntoResponse, (StatusCode, serde_json::Value)> {
+    get_email(cookie_jar, &mut req).await?;
 
     Ok(next.run(req).await)
 }
@@ -50,19 +51,17 @@ async fn get_email<B>(cookie_jar: CookieJar, req: &mut Request<B>) -> Result<(),
         .get("token")
         .map(|cookie| cookie.value())
         .or_else(|| get_token_from_headers(req))
-        .ok_or(TokenError::NotPresent)?;
+        .ok_or(AuthError::TokenNotPresent)?;
 
-    let header = jwt::decode_header(token).map_err(|e| TokenError::Validation(e.to_string()))?;
+    let header = jwt::decode_header(token)?;
 
-    let kid = header.kid.ok_or(TokenError::InvalidKid)?;
+    let kid = header.kid.ok_or(AuthError::InvalidKid)?;
 
-    let jwks = get_google_jwks()
-        .await
-        .map_err(|e| TokenError::IO(e.to_string()))?;
+    let jwks = get_google_jwks().await?;
 
-    let jwk = jwks.find(&kid).ok_or(TokenError::InvalidKid)?;
+    let jwk = jwks.find(&kid).ok_or(AuthError::InvalidKid)?;
 
-    let token_data = get_claims(token, jwk).map_err(|e| TokenError::Validation(e.to_string()))?;
+    let token_data = get_claims(token, jwk)?;
 
     req.extensions_mut().insert(token_data.claims.email);
 
