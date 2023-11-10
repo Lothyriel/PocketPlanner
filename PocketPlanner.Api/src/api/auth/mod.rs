@@ -2,6 +2,7 @@ use axum::{
     http::{header, Request, StatusCode},
     middleware::Next,
     response::IntoResponse,
+    Json,
 };
 
 use axum_extra::extract::cookie::CookieJar;
@@ -12,7 +13,7 @@ pub async fn auth<B>(
     cookie_jar: CookieJar,
     mut req: Request<B>,
     next: Next<B>,
-) -> Result<impl IntoResponse, (StatusCode, serde_json::Value)> {
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     get_email(cookie_jar, &mut req).await?;
 
     Ok(next.run(req).await)
@@ -80,11 +81,11 @@ pub enum AuthError {
     IO(#[from] reqwest::Error),
 }
 
-impl From<AuthError> for (StatusCode, serde_json::Value) {
+impl From<AuthError> for (StatusCode, Json<serde_json::Value>) {
     fn from(value: AuthError) -> Self {
         (
             StatusCode::UNAUTHORIZED,
-            json!({"error": value.to_string() }),
+            Json(json!({"error": value.to_string() })),
         )
     }
 }
