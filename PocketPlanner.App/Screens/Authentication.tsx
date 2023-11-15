@@ -14,16 +14,16 @@ type UserInfo = {
   locale: string
 }
 
+const GOOGLE_CONFIG = {
+  clientId: '824653628296-ahr9jr3aqgr367mul4p359dj4plsl67a.apps.googleusercontent.com',
+  iosClientId: '824653628296-5a4hseol33ep0vvo5tg29m39ib4src71.apps.googleusercontent.com',
+  androidClientId: '824653628296-g4ij9785h9c1gkbimm5af42o4l7mket3.apps.googleusercontent.com'
+}
 export default function() {
   const [auth, setAccessToken] = useState<TokenResponse | null>(null)
 
   const [user, setUser] = useState<UserInfo | null>(null)
 
-  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: '824653628296-ahr9jr3aqgr367mul4p359dj4plsl67a.apps.googleusercontent.com',
-    iosClientId: '824653628296-5a4hseol33ep0vvo5tg29m39ib4src71.apps.googleusercontent.com',
-    androidClientId: '824653628296-g4ij9785h9c1gkbimm5af42o4l7mket3.apps.googleusercontent.com'
-  })
 
   useEffect(() => {
     if (!response) {
