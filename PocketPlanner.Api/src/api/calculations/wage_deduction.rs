@@ -8,6 +8,18 @@ pub struct Params {
     dependents: Option<Decimal>,
 }
 
+#[derive(serde::Serialize)]
+pub struct WageDeductionsModel {
+    inss: Decimal,
+    inss_percent: Decimal,
+    irrf: Decimal,
+    irrf_percent: Decimal,
+    total_deductions: Decimal,
+    gross: Decimal,
+    net: Decimal,
+    aliquot_irrf: Decimal,
+}
+
 #[axum_macros::debug_handler]
 pub async fn handler(params: Query<Params>) -> Json<WageDeductionsModel> {
     let deductions = get_deductions(params.wage, params.dependents.unwrap_or_default());
@@ -88,18 +100,6 @@ fn get_inss(gross_wage: Decimal) -> InssDeduction {
 struct InssDeduction {
     inss: Decimal,
     percent: Decimal,
-}
-
-#[derive(serde::Serialize)]
-pub struct WageDeductionsModel {
-    inss: Decimal,
-    inss_percent: Decimal,
-    irrf: Decimal,
-    irrf_percent: Decimal,
-    total_deductions: Decimal,
-    gross: Decimal,
-    net: Decimal,
-    aliquot_irrf: Decimal,
 }
 
 struct InssRange {
