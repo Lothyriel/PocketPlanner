@@ -1,5 +1,5 @@
 mod auth;
-mod calculations;
+pub mod calculations;
 mod user;
 
 use axum::{routing, Router};
