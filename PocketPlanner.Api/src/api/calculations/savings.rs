@@ -57,10 +57,10 @@ pub fn get_revenue(params: &Params) -> Revenue {
 
     Revenue {
         savings: c(SAVINGS_RATE),
-        nubank: c((CDI * 100.) / 100. / 12.),
-        picpay: c((CDI * 102.) / 100. / 12.),
-        treasury: c((TREASURY_2027) / 12.),
-        selic: c((TREASURY_2027) / 12.),
+        nubank: c(CDI * 100. / 100. / 12.),
+        picpay: c(CDI * 102. / 100. / 12.),
+        treasury: c(TREASURY_2027 / 12.),
+        selic: c(TREASURY_2027 / 12.),
         fgts: get_gross(params, 3. / 12.).savings,
     }
 }
