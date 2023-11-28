@@ -20,7 +20,7 @@ pub struct Revenue {
     pub savings: Decimal,
     pub nubank: Decimal,
     pub picpay: Decimal,
-    pub treasure: Decimal,
+    pub treasury: Decimal,
     pub selic: Decimal,
     pub fgts: Decimal,
 }
@@ -32,7 +32,7 @@ struct SavingSimulation {
 
 const SELIC: f64 = 12.25;
 const CDI: f64 = SELIC - 0.1;
-const TREASURE_2027: f64 = SELIC + 0.1736;
+const TREASURY_2027: f64 = SELIC + 0.1736;
 const SAVINGS_RATE: f64 = if SELIC > 8.5 {
     0.5
 } else {
@@ -59,8 +59,8 @@ pub fn get_revenue(params: &Params) -> Revenue {
         savings: c(SAVINGS_RATE),
         nubank: c((CDI * 100.) / 100. / 12.),
         picpay: c((CDI * 102.) / 100. / 12.),
-        treasure: c((TREASURE_2027) / 12.),
-        selic: c((TREASURE_2027) / 12.),
+        treasury: c((TREASURY_2027) / 12.),
+        selic: c((TREASURY_2027) / 12.),
         fgts: get_gross(params, 3. / 12.).savings,
     }
 }
