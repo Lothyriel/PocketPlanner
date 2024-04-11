@@ -1,4 +1,6 @@
-use axum::{routing, Router};
+use axum::{routing, Extension, Json, Router};
+
+use crate::api::auth::UserClaims;
 
 pub fn router() -> Router {
     Router::new()
@@ -6,10 +8,10 @@ pub fn router() -> Router {
         .route("/", routing::post(add))
 }
 
-pub async fn handler(Extension(user_claims): Extension<UserClaims>) -> Json<String> {
+pub async fn get(Extension(user_claims): Extension<UserClaims>) -> Json<String> {
     todo!()
 }
 
-pub async fn handler(Extension(user_claims): Extension<UserClaims>) -> Json<String> {
+pub async fn add(Extension(user_claims): Extension<UserClaims>) -> Json<String> {
     todo!()
 }
