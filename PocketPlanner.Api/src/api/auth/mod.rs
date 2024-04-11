@@ -52,7 +52,7 @@ fn get_claims(
     token: &str,
     jwk: &jwt::jwk::Jwk,
 ) -> Result<jwt::TokenData<UserClaims>, jwt::errors::Error> {
-    let mut validation = jwt::Validation::default();
+    let mut validation = jwt::Validation::new(jwt::Algorithm::RS256);
 
     validation.set_issuer(&["https://accounts.google.com"]);
 
