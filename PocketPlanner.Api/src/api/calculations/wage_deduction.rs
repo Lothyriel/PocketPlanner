@@ -20,7 +20,6 @@ pub struct WageDeductionsModel {
     aliquot_irrf: Decimal,
 }
 
-#[axum_macros::debug_handler]
 pub async fn handler(params: Query<Params>) -> Json<WageDeductionsModel> {
     let deductions = get_deductions(params.wage, params.dependents.unwrap_or_default());
 

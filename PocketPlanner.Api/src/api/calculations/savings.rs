@@ -39,7 +39,6 @@ const SAVINGS_RATE: f64 = if SELIC > 8.5 {
     SELIC * 70. / 100. / 12.
 };
 
-#[axum_macros::debug_handler]
 pub async fn handler(params: Query<Params>) -> Json<SavingsModel> {
     let revenue = get_revenue(&params.0);
 
