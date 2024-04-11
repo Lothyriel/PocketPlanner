@@ -7,7 +7,7 @@ COPY Cargo.toml ./
 RUN cargo build --release
 
 # Prod stage
-FROM gcr.io/distroless/cc
+FROM debian:stable-slim
 
 EXPOSE 3000
 
