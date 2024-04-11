@@ -91,7 +91,7 @@ impl From<AuthError> for (StatusCode, Json<serde_json::Value>) {
     }
 }
 
-#[derive(serde::Deserialize, Clone)]
+#[derive(serde::Deserialize, serde::Serialize, Clone)]
 pub struct UserClaims {
     pub email: String,
     pub name: String,

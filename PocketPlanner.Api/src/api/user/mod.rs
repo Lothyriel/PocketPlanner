@@ -10,6 +10,6 @@ pub fn router() -> Router {
         .nest("/transaction", transaction::router())
 }
 
-pub async fn handler(Extension(user_claims): Extension<UserClaims>) -> Json<String> {
-    Json(user_claims.email)
+pub async fn handler(Extension(user_claims): Extension<UserClaims>) -> Json<UserClaims> {
+    Json(user_claims)
 }
