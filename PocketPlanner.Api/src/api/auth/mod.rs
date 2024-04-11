@@ -76,9 +76,9 @@ pub enum AuthError {
     TokenNotPresent,
     #[error("Invalid KeyId ('kid') on token")]
     InvalidKid,
-    #[error("Invalid token: (0)")]
+    #[error("Invalid token: ({0})")]
     JwtValidation(#[from] jwt::errors::Error),
-    #[error("Error during certificate retrieval: (0)")]
+    #[error("Error during certificate retrieval: ({0})")]
     IO(#[from] reqwest::Error),
 }
 
