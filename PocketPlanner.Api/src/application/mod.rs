@@ -1,2 +1,3 @@
 pub mod extractors;
-mod model;
+pub mod model;
+pub mod repositories;
