@@ -5,3 +5,9 @@ pub struct Transaction {
     email: String,
     value: Decimal,
 }
+
+impl Transaction {
+    pub fn new(email: String, value: Decimal) -> Self {
+        Self { email, value }
+    }
+}

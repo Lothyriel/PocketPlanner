@@ -1,17 +1,40 @@
-use axum::{routing, Extension, Json, Router};
+use axum::{extract::State, routing, Extension, Json, Router};
+use rust_decimal::Decimal;
 
-use crate::api::auth::UserClaims;
+use crate::{
+    api::{auth::UserClaims, AppState, ResponseResult},
+    application::model::transaction::Transaction,
+};
 
-pub fn router() -> Router {
+#[derive(serde::Deserialize)]
+struct Params {
+    value: Decimal,
+}
+
+pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/", routing::get(get))
         .route("/", routing::post(add))
+        .with_state(state)
 }
 
-pub async fn get(Extension(user_claims): Extension<UserClaims>) -> Json<String> {
-    todo!()
+async fn get(
+    State(state): State<AppState>,
+    Extension(user_claims): Extension<UserClaims>,
+) -> ResponseResult<Vec<Transaction>> {
+    let extract = state.transactions.get_extract(user_claims.email).await?;
+
+    Ok(Json(extract))
 }
 
-pub async fn add(Extension(user_claims): Extension<UserClaims>) -> Json<String> {
-    todo!()
+async fn add(
+    State(state): State<AppState>,
+    Extension(user_claims): Extension<UserClaims>,
+    Json(params): Json<Params>,
+) -> ResponseResult<()> {
+    let tx = Transaction::new(user_claims.email, params.value);
+
+    state.transactions.insert(tx).await?;
+
+    Ok(Json(()))
 }
