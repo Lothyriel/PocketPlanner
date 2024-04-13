@@ -4,7 +4,6 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-
 use axum_extra::extract::cookie::CookieJar;
 use jsonwebtoken as jwt;
 use jwt::{errors::Error, jwk::Jwk, TokenData};
