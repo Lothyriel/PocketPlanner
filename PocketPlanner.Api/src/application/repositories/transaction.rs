@@ -21,13 +21,10 @@ impl TransactionRepository {
     }
 
     pub async fn get_extract(&self, email: String) -> Result<Vec<Transaction>> {
-        let cursor = self
-            .transactions
+        self.transactions
             .find(doc! { "email": email }, None)
-            .await?;
-
-        let transactions = cursor.try_collect().await?;
-
-        Ok(transactions)
+            .await?
+            .try_collect()
+            .await
     }
 }
