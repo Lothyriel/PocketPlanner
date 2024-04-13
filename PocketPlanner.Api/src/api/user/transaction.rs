@@ -38,3 +38,5 @@ async fn add(
 
     Ok(Json(()))
 }
+
+async fn delete() {}
