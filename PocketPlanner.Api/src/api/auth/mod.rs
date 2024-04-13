@@ -7,6 +7,7 @@ use axum::{
 
 use axum_extra::extract::cookie::CookieJar;
 use jsonwebtoken as jwt;
+use jwt::{errors::Error, jwk::Jwk, TokenData};
 use serde_json::json;
 
 pub async fn auth<B>(
@@ -48,10 +49,7 @@ fn get_token_from_headers<B>(req: &Request<B>) -> Option<&str> {
         .and_then(|value| value.starts_with("Bearer ").then(|| &value[7..]))
 }
 
-fn get_claims(
-    token: &str,
-    jwk: &jwt::jwk::Jwk,
-) -> Result<jwt::TokenData<UserClaims>, jwt::errors::Error> {
+fn get_claims(token: &str, jwk: &Jwk) -> Result<TokenData<UserClaims>, Error> {
     let mut validation = jwt::Validation::new(jwt::Algorithm::RS256);
 
     validation.set_issuer(&["https://accounts.google.com"]);
