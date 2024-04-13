@@ -1,7 +1,7 @@
 use futures::TryStreamExt;
-use mongodb::{bson::doc, Collection, Database};
+use mongodb::{bson::doc, error::Result, Collection, Database};
 
-use crate::{api::ResponseError, application::model::transaction::Transaction};
+use crate::application::model::transaction::Transaction;
 
 pub struct TransactionRepository {
     transactions: Collection<Transaction>,
@@ -14,13 +14,13 @@ impl TransactionRepository {
         }
     }
 
-    pub async fn insert(&self, tx: Transaction) -> Result<(), ResponseError> {
+    pub async fn insert(&self, tx: Transaction) -> Result<()> {
         self.transactions.insert_one(tx, None).await?;
 
         Ok(())
     }
 
-    pub async fn get_extract(&self, email: String) -> Result<Vec<Transaction>, ResponseError> {
+    pub async fn get_extract(&self, email: String) -> Result<Vec<Transaction>> {
         let cursor = self
             .transactions
             .find(doc! { "email": email }, None)
