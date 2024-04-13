@@ -2,7 +2,8 @@ mod auth;
 mod calculations;
 mod user;
 
-use axum::{routing, Router};
+use axum::{http::StatusCode, response::IntoResponse, routing, Json, Router};
+use serde_json::json;
 
 pub fn router() -> axum::Router {
     Router::new()
@@ -17,4 +18,22 @@ fn get_api_router() -> Router {
             "/user",
             user::router().route_layer(axum::middleware::from_fn(auth::auth)),
         )
+}
+
+pub type ResponseResult<T> = Result<Json<T>, ResponseError>;
+
+#[derive(thiserror::Error, Debug)]
+pub enum ResponseError {
+    #[error("IO Error: {0}")]
+    IO(#[from] mongodb::error::Error),
+}
+
+impl IntoResponse for ResponseError {
+    fn into_response(self) -> axum::response::Response {
+        let code = match self {
+            ResponseError::IO(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        };
+
+        (code, Json(json!({"error": self.to_string() }))).into_response()
+    }
 }

@@ -13,7 +13,7 @@ pub async fn auth<B>(
     cookie_jar: CookieJar,
     mut req: Request<B>,
     next: Next<B>,
-) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+) -> Result<impl IntoResponse, AuthError> {
     get_email(cookie_jar, &mut req).await?;
 
     Ok(next.run(req).await)
@@ -82,12 +82,11 @@ pub enum AuthError {
     IO(#[from] reqwest::Error),
 }
 
-impl From<AuthError> for (StatusCode, Json<serde_json::Value>) {
-    fn from(value: AuthError) -> Self {
-        (
-            StatusCode::UNAUTHORIZED,
-            Json(json!({"error": value.to_string() })),
-        )
+impl IntoResponse for AuthError {
+    fn into_response(self) -> axum::response::Response {
+        let body = Json(json!({"error": self.to_string() }));
+
+        (StatusCode::UNAUTHORIZED, body).into_response()
     }
 }
 
