@@ -1,6 +1,6 @@
 use mongodb::{error::Result, options::ClientOptions, Client};
 
-mod transaction;
+pub mod transaction;
 
 pub async fn get_mongo_client() -> Result<Client> {
     dotenv::dotenv().ok();

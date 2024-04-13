@@ -9,7 +9,13 @@ async fn main() {
 
     let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 3000));
 
-    let server = axum::Server::bind(&addr).serve(api::router().into_make_service());
+    let state = api::get_state()
+        .await
+        .expect("Failed to initialize application state");
+
+    let router = api::router(state).into_make_service();
+
+    let server = axum::Server::bind(&addr).serve(router);
 
     log::info!("Starting API in: {}", addr);
 
@@ -17,6 +23,3 @@ async fn main() {
         log::error!("{}", err);
     }
 }
-
-#[allow(dead_code)]
-enum ResponseError {}

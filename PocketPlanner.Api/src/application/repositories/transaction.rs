@@ -3,6 +3,7 @@ use mongodb::{bson::doc, error::Result, Collection, Database};
 
 use crate::application::model::transaction::Transaction;
 
+#[derive(Clone)]
 pub struct TransactionRepository {
     transactions: Collection<Transaction>,
 }
