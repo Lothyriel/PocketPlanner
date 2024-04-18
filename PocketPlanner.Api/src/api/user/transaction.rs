@@ -1,4 +1,5 @@
 use axum::{extract::State, routing, Extension, Json, Router};
+use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 
 use crate::{
@@ -9,6 +10,16 @@ use crate::{
 #[derive(serde::Deserialize)]
 struct Params {
     value: Decimal,
+    description: String,
+    tags: Vec<String>,
+}
+
+#[derive(serde::Serialize)]
+struct Model {
+    value: Decimal,
+    date: DateTime<Utc>,
+    description: String,
+    tags: Vec<String>,
 }
 
 pub fn router(state: AppState) -> Router {
@@ -21,10 +32,20 @@ pub fn router(state: AppState) -> Router {
 async fn get(
     State(state): State<AppState>,
     Extension(user_claims): Extension<UserClaims>,
-) -> ResponseResult<Vec<Transaction>> {
+) -> ResponseResult<Vec<Model>> {
     let extract = state.transactions.get_extract(user_claims.email).await?;
 
-    Ok(Json(extract))
+    let response = extract
+        .into_iter()
+        .map(|t| Model {
+            value: t.value,
+            date: t.date,
+            description: t.description,
+            tags: t.tags,
+        })
+        .collect();
+
+    Ok(Json(response))
 }
 
 async fn add(
@@ -32,7 +53,13 @@ async fn add(
     Extension(user_claims): Extension<UserClaims>,
     Json(params): Json<Params>,
 ) -> ResponseResult<()> {
-    let tx = Transaction::new(user_claims.email, params.value);
+    let tx = Transaction {
+        date: chrono::Utc::now(),
+        email: user_claims.email,
+        value: params.value,
+        tags: params.tags,
+        description: params.description,
+    };
 
     state.transactions.insert(tx).await?;
 
