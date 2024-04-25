@@ -20,6 +20,7 @@ struct Params {
 
 #[derive(serde::Serialize)]
 struct Model {
+    id: ObjectId,
     value: Decimal,
     date: DateTime<Utc>,
     description: String,
@@ -43,6 +44,7 @@ async fn get(
     let response = extract
         .into_iter()
         .map(|t| Model {
+            id: t.id,
             value: t.value,
             date: t.date,
             description: t.description,
@@ -59,6 +61,7 @@ async fn add(
     Json(params): Json<Params>,
 ) -> ResponseResult<ObjectId> {
     let tx = Transaction {
+        id: ObjectId::new(),
         date: chrono::Utc::now(),
         email: user_claims.email,
         value: params.value,
