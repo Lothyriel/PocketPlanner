@@ -18,6 +18,7 @@ pub fn router(state: AppState) -> Router {
 
 fn get_api_router(state: AppState) -> Router {
     Router::new()
+        .route("/token", routing::post(auth::refresh))
         .nest("/calculations", calculations::router())
         .nest(
             "/user",
@@ -31,12 +32,18 @@ type ResponseResult<T> = Result<Json<T>, ResponseError>;
 pub enum ResponseError {
     #[error("DatabaseError: {0}")]
     Database(#[from] DatabaseError),
+    #[error("HttpError: {0}")]
+    Http(#[from] reqwest::Error),
+    #[error("EnvError: {0}")]
+    Environment(#[from] std::env::VarError),
 }
 
 impl IntoResponse for ResponseError {
     fn into_response(self) -> axum::response::Response {
         let code = match self {
             ResponseError::Database(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            ResponseError::Http(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            ResponseError::Environment(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
         (code, Json(json!({"error": self.to_string() }))).into_response()
