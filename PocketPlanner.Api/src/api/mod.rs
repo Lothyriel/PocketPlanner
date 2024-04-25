@@ -6,7 +6,9 @@ use axum::{http::StatusCode, response::IntoResponse, routing, Json, Router};
 use mongodb::error::Error;
 use serde_json::json;
 
-use crate::application::repositories::{get_mongo_client, transaction::TransactionRepository};
+use crate::application::repositories::{
+    get_mongo_client, transaction::TransactionRepository, DatabaseError,
+};
 
 pub fn router(state: AppState) -> Router {
     Router::new()
@@ -27,14 +29,14 @@ type ResponseResult<T> = Result<Json<T>, ResponseError>;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ResponseError {
-    #[error("IO Error: {0}")]
-    IO(#[from] mongodb::error::Error),
+    #[error("DatabaseError: {0}")]
+    Database(#[from] DatabaseError),
 }
 
 impl IntoResponse for ResponseError {
     fn into_response(self) -> axum::response::Response {
         let code = match self {
-            ResponseError::IO(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            ResponseError::Database(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
         (code, Json(json!({"error": self.to_string() }))).into_response()

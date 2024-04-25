@@ -1,5 +1,9 @@
-use axum::{extract::State, routing, Extension, Json, Router};
+use axum::{
+    extract::{Path, State},
+    routing, Extension, Json, Router,
+};
 use chrono::{DateTime, Utc};
+use mongodb::bson::oid::ObjectId;
 use rust_decimal::Decimal;
 
 use crate::{
@@ -26,6 +30,7 @@ pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/", routing::get(get))
         .route("/", routing::post(add))
+        .route("/", routing::delete(delete))
         .with_state(state)
 }
 
@@ -52,7 +57,7 @@ async fn add(
     State(state): State<AppState>,
     Extension(user_claims): Extension<UserClaims>,
     Json(params): Json<Params>,
-) -> ResponseResult<()> {
+) -> ResponseResult<ObjectId> {
     let tx = Transaction {
         date: chrono::Utc::now(),
         email: user_claims.email,
@@ -61,9 +66,17 @@ async fn add(
         description: params.description,
     };
 
-    state.transactions.insert(tx).await?;
+    let id = state.transactions.insert(tx).await?;
+
+    Ok(Json(id))
+}
+
+async fn delete(
+    State(state): State<AppState>,
+    Extension(user_claims): Extension<UserClaims>,
+    Path(id): Path<ObjectId>,
+) -> ResponseResult<()> {
+    state.transactions.delete(user_claims.email, id).await?;
 
     Ok(Json(()))
 }
-
-async fn delete() {}
