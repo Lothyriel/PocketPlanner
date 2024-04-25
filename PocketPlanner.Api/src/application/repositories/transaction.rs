@@ -20,7 +20,7 @@ impl TransactionRepository {
         }
     }
 
-    pub async fn insert(&self, tx: Transaction) -> DbResult<ObjectId> {
+    pub async fn insert(&self, tx: &Transaction) -> DbResult<ObjectId> {
         let result = self.transactions.insert_one(tx, None).await?;
 
         let id = result
@@ -31,7 +31,7 @@ impl TransactionRepository {
         Ok(id)
     }
 
-    pub async fn get_extract(&self, email: String) -> DbResult<Vec<Transaction>> {
+    pub async fn get_extract(&self, email: &str) -> DbResult<Vec<Transaction>> {
         let transactions = self
             .transactions
             .find(doc! { "email": email }, None)
@@ -42,7 +42,7 @@ impl TransactionRepository {
         Ok(transactions)
     }
 
-    pub async fn delete(&self, email: String, id: ObjectId) -> DbResult<()> {
+    pub async fn delete(&self, email: &str, id: ObjectId) -> DbResult<()> {
         self.transactions
             .delete_one(doc! {"email" : email, "_id": id}, None)
             .await?;

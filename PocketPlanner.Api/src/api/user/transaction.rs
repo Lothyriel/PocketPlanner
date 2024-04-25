@@ -38,7 +38,7 @@ async fn get(
     State(state): State<AppState>,
     Extension(user_claims): Extension<UserClaims>,
 ) -> ResponseResult<Vec<Model>> {
-    let extract = state.transactions.get_extract(user_claims.email).await?;
+    let extract = state.transactions.get_extract(&user_claims.email).await?;
 
     let response = extract
         .into_iter()
@@ -66,7 +66,7 @@ async fn add(
         description: params.description,
     };
 
-    let id = state.transactions.insert(tx).await?;
+    let id = state.transactions.insert(&tx).await?;
 
     Ok(Json(id))
 }
@@ -76,7 +76,7 @@ async fn delete(
     Extension(user_claims): Extension<UserClaims>,
     Path(id): Path<ObjectId>,
 ) -> ResponseResult<()> {
-    state.transactions.delete(user_claims.email, id).await?;
+    state.transactions.delete(&user_claims.email, id).await?;
 
     Ok(Json(()))
 }
