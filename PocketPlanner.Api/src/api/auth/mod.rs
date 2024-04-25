@@ -7,7 +7,10 @@ use axum::{
 use axum_extra::extract::cookie::CookieJar;
 use jsonwebtoken as jwt;
 use jwt::{errors::Error, jwk::Jwk, TokenData};
+use reqwest::Client;
 use serde_json::json;
+
+use super::ResponseResult;
 
 pub async fn auth<B>(
     cookie_jar: CookieJar,
@@ -17,6 +20,37 @@ pub async fn auth<B>(
     get_email(cookie_jar, &mut req).await?;
 
     Ok(next.run(req).await)
+}
+
+#[derive(serde::Deserialize)]
+pub struct Params {
+    refresh_token: String,
+    client_id: String,
+}
+
+pub async fn refresh(Json(params): Json<Params>) -> ResponseResult<()> {
+    let client = Client::new();
+
+    let secret = std::env::var("G_CLIENT_SECRET")?;
+
+    let body = json! ({
+        "client_id": params.client_id,
+        "refresh_token": params.refresh_token,
+        "client_secret": secret,
+        "grant_type": "refresh_token"
+    });
+
+    let response = client
+        .post("https://oauth2.googleapis.com/token")
+        .json(&body)
+        .send()
+        .await?;
+
+    println!("{}", response.text().await?);
+
+    //let body = response.json().await?;
+
+    Ok(Json(()))
 }
 
 async fn get_email<B>(cookie_jar: CookieJar, req: &mut Request<B>) -> Result<(), AuthError> {
