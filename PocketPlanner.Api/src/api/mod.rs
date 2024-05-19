@@ -1,3 +1,4 @@
+mod assets;
 mod auth;
 mod calculations;
 mod user;
@@ -12,6 +13,7 @@ use crate::application::repositories::{
 
 pub fn router(state: AppState) -> Router {
     Router::new()
+        .nest("/.well-known", assets::asset_links_router())
         .nest("/api", get_api_router(state))
 }
 
