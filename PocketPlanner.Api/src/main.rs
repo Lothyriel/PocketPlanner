@@ -7,7 +7,7 @@ async fn main() {
         .target(env_logger::Target::Stdout)
         .init();
 
-    let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 3000));
+    let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 8080));
 
     let state = api::get_state()
         .await

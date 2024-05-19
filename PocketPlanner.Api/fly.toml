@@ -7,8 +7,16 @@ app = "pocket-planner-api"
 primary_region = "gru"
 
 [http_service]
-internal_port = 3000
+internal_port = 8080
 force_https = true
 auto_stop_machines = true
 auto_start_machines = true
 min_machines_running = 1
+[[services.http_checks]]
+interval = "30s"
+grace_period = "10s"
+method = "GET"
+path = "/api/health/"
+protocol = "https"
+timeout = "5s"
+tls_skip_verify = false
