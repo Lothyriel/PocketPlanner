@@ -12,12 +12,12 @@ use crate::application::repositories::{
 
 pub fn router(state: AppState) -> Router {
     Router::new()
-        .route("/health", routing::get(|| async { "healthy!" }))
         .nest("/api", get_api_router(state))
 }
 
 fn get_api_router(state: AppState) -> Router {
     Router::new()
+        .route("/health", routing::get(|| async { "healthy!" }))
         .route("/token", routing::post(auth::refresh))
         .nest("/calculations", calculations::router())
         .nest(
