@@ -31,7 +31,7 @@ pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/", routing::get(get))
         .route("/", routing::post(add))
-        .route("/", routing::delete(delete))
+        .route("/:id", routing::delete(delete))
         .with_state(state)
 }
 
