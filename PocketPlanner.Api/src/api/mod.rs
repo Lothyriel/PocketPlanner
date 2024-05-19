@@ -1,5 +1,6 @@
 mod assets;
 mod auth;
+mod belvo;
 mod calculations;
 mod user;
 
@@ -22,6 +23,7 @@ fn get_api_router(state: AppState) -> Router {
         .route("/health", routing::get(|| async { "healthy!" }))
         .route("/token", routing::post(auth::refresh))
         .nest("/calculations", calculations::router())
+        .nest("/belvo", belvo::router())
         .nest(
             "/user",
             user::router(state).route_layer(axum::middleware::from_fn(auth::auth)),
