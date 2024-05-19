@@ -17,6 +17,8 @@ interval = "30s"
 grace_period = "10s"
 method = "GET"
 path = "/api/health/"
-protocol = "https"
+protocol = "http"
 timeout = "5s"
 tls_skip_verify = true
+[http_service.checks.headers]
+X-Forwarded-Proto = "https"
