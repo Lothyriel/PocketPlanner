@@ -9,7 +9,7 @@ RUN cargo build --release
 # Prod stage
 FROM debian:stable-slim
 
-EXPOSE 3000
+EXPOSE 8080
 
 COPY --from=builder /target/release/pocket_planner /
 
