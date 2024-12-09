@@ -98,3 +98,19 @@ fn get_ir(invested: Decimal, gross: Decimal, months: u16) -> Decimal {
 
     ir_fee * revenue / dec!(100)
 }
+
+#[cfg(test)]
+mod tests {
+    use rust_decimal_macros::dec;
+
+    #[test]
+    fn savings() {
+        let s = super::get_revenue(&super::Params {
+            initial: dec!(1000),
+            contribution: dec!(0),
+            months: 10,
+        });
+
+        assert_eq!(s.picpay, dec!(1086.5673405142189276291334422));
+    }
+}
