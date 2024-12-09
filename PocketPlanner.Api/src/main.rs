@@ -1,5 +1,3 @@
-use pocket_planner::api;
-
 #[tokio::main]
 async fn main() {
     env_logger::builder()
@@ -9,11 +7,11 @@ async fn main() {
 
     let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 8080));
 
-    let state = api::get_state()
+    let state = pocket_planner::get_state()
         .await
         .expect("Failed to initialize application state");
 
-    let router = api::router(state).into_make_service();
+    let router = pocket_planner::router(state).into_make_service();
 
     let server = axum::Server::bind(&addr).serve(router);
 
