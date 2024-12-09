@@ -7,13 +7,17 @@ async fn main() {
 
     let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 8080));
 
-    let state = pocket_planner::get_state()
+    let state = pocket_planner::init_state()
         .await
-        .expect("Failed to initialize application state");
+        .expect("To initialize application state");
 
-    let router = pocket_planner::router(state).into_make_service();
+    let router = pocket_planner::router(state);
 
-    let server = axum::Server::bind(&addr).serve(router);
+    let listener = tokio::net::TcpListener::bind(addr)
+        .await
+        .expect("To bind to {addr:?}");
+
+    let server = axum::serve(listener, router);
 
     log::info!("Starting API in: {}", addr);
 

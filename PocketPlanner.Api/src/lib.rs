@@ -43,11 +43,11 @@ pub struct AppState {
 pub fn router(state: AppState) -> Router {
     Router::new()
         .nest("/.well-known", api::assets::asset_links_router())
-        .nest("/api", api::router(state))
+        .nest("/api", api::router(state.clone()))
         .nest("/", views::router(state))
 }
 
-pub async fn get_state() -> Result<AppState, Error> {
+pub async fn init_state() -> Result<AppState, Error> {
     let database = get_mongo_client().await?.database("pocket-planner");
 
     let state = AppState {
