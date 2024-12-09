@@ -1,5 +1,6 @@
 use axum::{
-    http::{header, Request, StatusCode},
+    extract::Request,
+    http::{header, StatusCode},
     middleware::Next,
     response::IntoResponse,
     Json,
@@ -10,12 +11,12 @@ use jwt::{errors::Error, jwk::Jwk, TokenData};
 use reqwest::Client;
 use serde_json::json;
 
-use super::ResponseResult;
+use crate::ResponseResult;
 
-pub async fn auth<B>(
+pub async fn auth(
     cookie_jar: CookieJar,
-    mut req: Request<B>,
-    next: Next<B>,
+    mut req: Request,
+    next: Next,
 ) -> Result<impl IntoResponse, AuthError> {
     get_email(cookie_jar, &mut req).await?;
 
@@ -53,7 +54,7 @@ pub async fn refresh(Json(params): Json<Params>) -> ResponseResult<()> {
     Ok(Json(()))
 }
 
-async fn get_email<B>(cookie_jar: CookieJar, req: &mut Request<B>) -> Result<(), AuthError> {
+async fn get_email(cookie_jar: CookieJar, req: &mut Request) -> Result<(), AuthError> {
     let token = cookie_jar
         .get("token")
         .map(|cookie| cookie.value())
@@ -75,7 +76,7 @@ async fn get_email<B>(cookie_jar: CookieJar, req: &mut Request<B>) -> Result<(),
     Ok(())
 }
 
-fn get_token_from_headers<B>(req: &Request<B>) -> Option<&str> {
+fn get_token_from_headers(req: &Request) -> Option<&str> {
     req.headers()
         .get(header::AUTHORIZATION)
         .and_then(|header| header.to_str().ok())

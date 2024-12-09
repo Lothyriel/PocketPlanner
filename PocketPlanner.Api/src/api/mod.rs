@@ -3,15 +3,9 @@ mod auth;
 mod calculations;
 mod user;
 
-use axum::{http::StatusCode, response::IntoResponse, routing, Json, Router};
-use serde_json::json;
+use axum::{routing, Router};
 
-use crate::{
-    application::repositories::{
-        get_mongo_client, transaction::TransactionRepository, DatabaseError,
-    },
-    AppState,
-};
+use crate::AppState;
 
 pub fn router(state: AppState) -> Router {
     Router::new()
