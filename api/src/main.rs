@@ -1,15 +1,40 @@
-use application::repositories::{
-    get_mongo_client, transaction::TransactionRepository, DatabaseError,
-};
-use axum::{response::IntoResponse, Json, Router};
-use mongodb::error::Error;
+use axum::{response::IntoResponse, Json};
 use reqwest::StatusCode;
 use serde_json::json;
+
+use application::repositories::DatabaseError;
 
 mod api;
 mod application;
 mod extensions;
-mod views;
+
+#[tokio::main]
+async fn main() {
+    env_logger::builder()
+        .filter_level(log::LevelFilter::Info)
+        .target(env_logger::Target::Stdout)
+        .init();
+
+    let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 8080));
+
+    let state = application::init_state()
+        .await
+        .expect("To initialize application state");
+
+    let router = api::router(state);
+
+    let listener = tokio::net::TcpListener::bind(addr)
+        .await
+        .expect("To bind to {addr:?}");
+
+    let server = axum::serve(listener, router);
+
+    log::info!("Starting API in: {}", addr);
+
+    if let Err(err) = server.await {
+        log::error!("{}", err);
+    }
+}
 
 type ResponseResult<T> = Result<Json<T>, ResponseError>;
 
@@ -33,26 +58,4 @@ impl IntoResponse for ResponseError {
 
         (code, Json(json!({"error": self.to_string() }))).into_response()
     }
-}
-
-#[derive(Clone)]
-pub struct AppState {
-    pub transactions: TransactionRepository,
-}
-
-pub fn router(state: AppState) -> Router {
-    Router::new()
-        .nest("/.well-known", api::assets::asset_links_router())
-        .nest("/api", api::router(state.clone()))
-        .nest("/", views::router(state))
-}
-
-pub async fn init_state() -> Result<AppState, Error> {
-    let database = get_mongo_client().await?.database("pocket-planner");
-
-    let state = AppState {
-        transactions: TransactionRepository::new(&database),
-    };
-
-    Ok(state)
 }

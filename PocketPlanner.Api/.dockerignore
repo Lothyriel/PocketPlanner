@@ -1,5 +1,0 @@
-# flyctl launch added from .gitignore
-target
-
-**\tests\data
-fly.toml

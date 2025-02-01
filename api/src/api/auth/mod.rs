@@ -18,7 +18,7 @@ pub async fn auth(
     mut req: Request,
     next: Next,
 ) -> Result<impl IntoResponse, AuthError> {
-    get_email(cookie_jar, &mut req).await?;
+    insert_claims(cookie_jar, &mut req).await?;
 
     Ok(next.run(req).await)
 }
@@ -54,7 +54,7 @@ pub async fn refresh(Json(params): Json<Params>) -> ResponseResult<()> {
     Ok(Json(()))
 }
 
-async fn get_email(cookie_jar: CookieJar, req: &mut Request) -> Result<(), AuthError> {
+async fn insert_claims(cookie_jar: CookieJar, req: &mut Request) -> Result<(), AuthError> {
     let token = cookie_jar
         .get("token")
         .map(|cookie| cookie.value())
@@ -69,7 +69,7 @@ async fn get_email(cookie_jar: CookieJar, req: &mut Request) -> Result<(), AuthE
 
     let jwk = jwks.find(&kid).ok_or(AuthError::InvalidKid)?;
 
-    let token_data = get_claims(token, jwk)?;
+    let token_data = get_token_data(token, jwk)?;
 
     req.extensions_mut().insert(token_data.claims);
 
@@ -83,7 +83,7 @@ fn get_token_from_headers(req: &Request) -> Option<&str> {
         .and_then(|value| value.starts_with("Bearer ").then(|| &value[7..]))
 }
 
-fn get_claims(token: &str, jwk: &Jwk) -> Result<TokenData<UserClaims>, Error> {
+fn get_token_data(token: &str, jwk: &Jwk) -> Result<TokenData<UserClaims>, Error> {
     let mut validation = jwt::Validation::new(jwt::Algorithm::RS256);
 
     validation.set_issuer(&["https://accounts.google.com"]);

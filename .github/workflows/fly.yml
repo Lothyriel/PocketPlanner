@@ -17,4 +17,4 @@ jobs:
 
       - uses: superfly/flyctl-actions/setup-flyctl@master
 
-      - run: flyctl deploy ./PocketPlanner.Api --remote-only
+      - run: flyctl deploy ./pp.api --remote-only
