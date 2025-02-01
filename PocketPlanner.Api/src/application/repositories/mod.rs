@@ -6,7 +6,7 @@ pub async fn get_mongo_client() -> mongodb::error::Result<Client> {
     dotenv::dotenv().ok();
 
     let connection_string = std::env::var("MONGO_CONNECTION_STRING").unwrap_or_else(|_| {
-        "mongodb://pocket-planner:P@SSW0RD@localhost/?retryWrites=true".to_string()
+        "mongodb://pocket-planner:P4SSW0RD@localhost/?retryWrites=true".to_string()
     });
 
     let options = ClientOptions::parse(connection_string).await?;
