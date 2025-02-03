@@ -1,20 +1,38 @@
-pub async fn route(route: &str) -> Result<impl askama::Template, AppError> {
+use askama::Template;
+use wasm_bindgen::prelude::wasm_bindgen;
+
+#[wasm_bindgen]
+pub fn render(route: &str) -> String {
+    get_template(route).expect("Render")
+}
+
+fn get_template(route: &str) -> Result<String, askama::Error> {
     match route {
-        "/" => Ok(index().await),
-        _ => Err(AppError {}),
+        "/" => index().render(),
+        _ => error().render(),
     }
 }
 
-pub struct AppError {}
-
-async fn index() -> IndexTemplate {
+fn index() -> IndexTemplate {
     IndexTemplate {
-        test: String::from("sexo"),
+        text: String::from("Hello from offline-first webassembly PWA"),
     }
 }
 
 #[derive(askama::Template)]
 #[template(path = "index.html")]
 struct IndexTemplate {
-    test: String,
+    text: String,
+}
+
+fn error() -> ErrorTemplate {
+    ErrorTemplate {
+        error: String::from("Something went wrong"),
+    }
+}
+
+#[derive(askama::Template)]
+#[template(path = "error.html")]
+struct ErrorTemplate {
+    error: String,
 }

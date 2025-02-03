@@ -6,8 +6,24 @@
   <title>Pocket Planner</title>
 </head>
 
+<script type="module">
+  import init from './wasm.js'
+
+  (async function () {
+    await init()
+  })()
+
+  navigator.serviceWorker.register('worker.js')
+    .then(registration => {
+      console.log('Service Worker registered with scope: ', registration.scope)
+    })
+    .catch(error => {
+      console.log('Service Worker registration failed: ', error)
+    })
+</script>
+
 <body>
-  <main> {{ test|safe }}</main>
+  <main> {{ text|safe }}</main>
 </body>
 
 </html>

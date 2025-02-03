@@ -4,4 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+wasm-bindgen = "0.2"
 askama = "0.12.1"
