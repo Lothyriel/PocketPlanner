@@ -1,5 +1,7 @@
 import init, { render } from './app.js'
 
+const CACHE_NAME = 'pp_cache'
+
 self.addEventListener('install', (event) => {
   (async function () {
     await init()
@@ -8,7 +10,7 @@ self.addEventListener('install', (event) => {
   console.log("Registered worker with wasm module")
 
   event.waitUntil(
-    caches.open('pp_cache').then((cache) => {
+    caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll([
         'index.html',
         'worker.js',
@@ -29,6 +31,19 @@ self.addEventListener('fetch', (event) => {
     const render = renderFromWasm(path.slice(origin.length));
     console.log("Response, ", render)
     event.respondWith(render)
+  } else {
+    fetch(event.request)
+      .then((response) => {
+        if (response.ok) {
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, response.clone());
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        return caches.match(event.request);
+      })
   }
 })
 
