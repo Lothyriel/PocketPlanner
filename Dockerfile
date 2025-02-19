@@ -6,6 +6,7 @@ COPY ./src ./src
 COPY Cargo.toml ./
 COPY build.sh ./ 
 
+RUN cargo install wasm-pack
 RUN chmod +x ./build.sh && ./build.sh 
 
 # Prod stage
