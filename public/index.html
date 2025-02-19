@@ -4,16 +4,11 @@
 <head>
   <meta charset="UTF-8">
   <title>Pocket Planner</title>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 </head>
 
 <script type="module">
-  import init from './wasm.js'
-
-  (async function () {
-    await init()
-  })()
-
-  navigator.serviceWorker.register('worker.js')
+  navigator.serviceWorker.register('worker.js', {type: "module"})
     .then(registration => {
       console.log('Service Worker registered with scope: ', registration.scope)
     })
@@ -23,7 +18,15 @@
 </script>
 
 <body>
-  <main> {{ text|safe }}</main>
+  <main>
+    <h1>HTMX Example with Axum</h1>
+    <div id="content">
+      <p>Initial content...</p>
+    </div>
+    <button hx-post="fragments/load-more" hx-target="#content" hx-swap="beforeend">
+      Load More
+    </button>
+  </main>
 </body>
 
 </html>

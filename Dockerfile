@@ -4,8 +4,9 @@ FROM rust:1.82 AS builder
 WORKDIR /
 COPY ./src ./src
 COPY Cargo.toml ./
+COPY build.sh ./ 
 
-RUN cargo build --release
+RUN chmod +x ./build.sh && ./build.sh 
 
 # Prod stage
 FROM debian:stable-slim

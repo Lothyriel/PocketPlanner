@@ -10,8 +10,9 @@ use crate::application::AppState;
 pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/health", routing::get(|| async { "healthy!" }))
-        .nest_service("/public", ServeDir::new("public"))
         .nest("/api", api_router(state))
+        .nest("/fragments", lib::router())
+        .fallback_service(ServeDir::new("public"))
 }
 
 fn api_router(state: AppState) -> Router {
