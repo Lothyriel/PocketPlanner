@@ -6,15 +6,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = "0.7.9"
-axum-extra = { version = "0.9.6", features = ["cookie"] }
-axum-macros = "0.4.2"
-tower-http = { version = "0.6.1", features = ["fs", "trace"] }
+axum = "0.8.1"
+axum-extra = { version = "0.10.0", features = ["cookie"] }
+axum-macros = "0.5.0"
+tower-http = { version = "0.6.2", features = ["fs", "trace"] }
 chrono = { version = "0.4.39", features = ["serde"] }
-env_logger = "0.11.5"
 jsonwebtoken = "9.1.0"
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 log = "0.4.19"
-lopdf = { version = "0.34.0", features = ["pom", "pom_parser"] }
+lopdf = { version = "0.35.0" }
 reqwest = { version = "0.12.9", features = [
   "json",
   "rustls-tls",

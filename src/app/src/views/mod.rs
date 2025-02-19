@@ -1,12 +1,6 @@
 use askama::Template;
-use wasm_bindgen::prelude::wasm_bindgen;
 
-#[wasm_bindgen]
-pub fn render(route: &str) -> String {
-    get_template(route).expect("Render")
-}
-
-fn get_template(route: &str) -> Result<String, askama::Error> {
+pub fn get_template(route: &str) -> Result<String, askama::Error> {
     match route {
         "/" => index().render(),
         _ => error().render(),

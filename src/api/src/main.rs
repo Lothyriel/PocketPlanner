@@ -1,8 +1,8 @@
+use application::repositories::DatabaseError;
 use axum::{response::IntoResponse, Json};
 use reqwest::StatusCode;
 use serde_json::json;
-
-use application::repositories::DatabaseError;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod api;
 mod application;
@@ -10,9 +10,12 @@ mod extensions;
 
 #[tokio::main]
 async fn main() {
-    env_logger::builder()
-        .filter_level(log::LevelFilter::Info)
-        .target(env_logger::Target::Stdout)
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or("debug,hyper=off".into()),
+        )
+        .with(tracing_subscriber::fmt::layer())
         .init();
 
     let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 8080));
@@ -21,7 +24,7 @@ async fn main() {
         .await
         .expect("To initialize application state");
 
-    let router = api::router(state);
+    let router = api::router(state).layer(tower_http::trace::TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind(addr)
         .await
@@ -29,10 +32,10 @@ async fn main() {
 
     let server = axum::serve(listener, router);
 
-    log::info!("Starting API in: {}", addr);
+    tracing::info!("Starting API in: {}", addr);
 
     if let Err(err) = server.await {
-        log::error!("{}", err);
+        tracing::error!("{}", err);
     }
 }
 
