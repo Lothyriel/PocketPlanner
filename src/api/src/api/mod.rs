@@ -11,7 +11,7 @@ pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/health", routing::get(|| async { "healthy!" }))
         .nest("/api", api_router(state))
-        .nest("/fragments", lib::router())
+        .nest("/fragments", lib::axum::router())
         .fallback_service(ServeDir::new("public"))
 }
 

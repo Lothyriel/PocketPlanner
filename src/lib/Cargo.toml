@@ -5,5 +5,9 @@ edition = "2021"
 
 [dependencies]
 askama = { version = "0.12.1", features = ["with-axum"] }
-axum = { version = "0.8.1" }
 askama_axum = { version = "0.4.0" }
+axum = { version = "0.8.1", optional = true }
+
+[features]
+default = []
+axum = ["dep:axum"]

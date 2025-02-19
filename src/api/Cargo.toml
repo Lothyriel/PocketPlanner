@@ -29,4 +29,4 @@ tokio = { version = "1.42.0", features = ["full"] }
 mongodb = "3.1.0"
 futures = "0.3.31"
 dotenv = "0.15"
-lib = { path = "../lib" }
+lib = { path = "../lib", features = ["axum"] }
