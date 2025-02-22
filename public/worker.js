@@ -7,8 +7,6 @@ self.addEventListener('install', (event) => {
     await init()
   })()
 
-  console.log("Registered worker with wasm module")
-
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll([
@@ -27,9 +25,7 @@ self.addEventListener('fetch', (event) => {
   const origin = `${self.location.origin}/fragments`
 
   if (path.startsWith(origin)) {
-    console.log("Intercepting ", path.slice(origin.length))
     const render = renderFromWasm(path.slice(origin.length));
-    console.log("Response, ", render)
     event.respondWith(render)
   } else {
     fetch(event.request)
@@ -53,8 +49,6 @@ self.addEventListener('fetch', (event) => {
  */
 function renderFromWasm(path) {
   const fragment = render(path)
-
-  console.log("Returning frag ", fragment)
 
   return new Response(fragment, {
     headers: { "Content-Type": "text/html" },
