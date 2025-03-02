@@ -1,0 +1,13 @@
+<ul id="transaction-list">
+  {% for tx in transactions %}
+  <li>
+    {{ tx.amount }} - {{ tx.description }}
+  </li>
+  {% endfor %}
+</ul>
+
+<form hx-post="/fragments/transaction/add" hx-target="#transaction-list" hx-swap="beforeend">
+  <input type="text" name="description" placeholder="Description" required>
+  <input type="number" name="amount" placeholder="Amount" required>
+  <button type="submit">Add</button>
+</form>
