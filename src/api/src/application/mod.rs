@@ -1,21 +1,8 @@
-use mongodb::error::Error;
-use repositories::{get_mongo_client, transaction::TransactionRepository};
+use rusqlite::Connection;
 
 pub mod extractors;
 pub mod model;
-pub mod repositories;
 
-#[derive(Clone)]
-pub struct AppState {
-    pub transactions: TransactionRepository,
-}
-
-pub async fn init_state() -> Result<AppState, Error> {
-    let database = get_mongo_client().await?.database("pocket_planner");
-
-    let state = AppState {
-        transactions: TransactionRepository::new(&database),
-    };
-
-    Ok(state)
+pub fn connect_db() -> anyhow::Result<Connection> {
+    Ok(Connection::open("user.db")?)
 }

@@ -18,7 +18,7 @@ pub fn action(form: Form) -> Result<String> {
     Ok(templates::transaction::action(&mut conn, tx)?.render()?)
 }
 
-// macro?
+// todo: macro?
 impl FromFormData for Transaction {
     fn from(form: Form) -> Result<Self> {
         let amount = form
