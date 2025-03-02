@@ -8,9 +8,9 @@ pub fn view(conn: &mut Connection) -> Result<View> {
 }
 
 pub fn action(conn: &mut Connection, tx: Transaction) -> Result<Action> {
-    add_transaction(conn, tx)?;
+    add_transaction(conn, &tx)?;
 
-    Ok(Action)
+    Ok(Action { tx })
 }
 
 fn get_transactions(conn: &mut Connection) -> Result<Vec<Transaction>> {
@@ -28,7 +28,7 @@ fn get_transactions(conn: &mut Connection) -> Result<Vec<Transaction>> {
     Ok(transactions)
 }
 
-fn add_transaction(conn: &mut Connection, transaction: Transaction) -> Result<()> {
+fn add_transaction(conn: &mut Connection, transaction: &Transaction) -> Result<()> {
     let tx = conn.transaction()?;
 
     tx.execute(
@@ -55,4 +55,6 @@ pub struct View {
 
 #[derive(askama::Template)]
 #[template(path = "transaction/action.html")]
-pub struct Action;
+pub struct Action {
+    tx: Transaction,
+}

@@ -4,7 +4,7 @@ FROM rust:1.82 AS builder
 WORKDIR /
 COPY ./src ./src
 COPY Cargo.toml ./
-COPY build.sh ./ 
+COPY build.sh ./
 
 RUN cargo install wasm-pack
 RUN chmod +x ./build.sh && ./build.sh 
