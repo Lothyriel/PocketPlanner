@@ -1,5 +1,6 @@
-use application::repositories::DatabaseError;
+use application::connect_db;
 use axum::{response::IntoResponse, Json};
+use lib::templates::init_db;
 use reqwest::StatusCode;
 use serde_json::json;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -20,11 +21,8 @@ async fn main() {
 
     let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 8080));
 
-    let state = application::init_state()
-        .await
-        .expect("To initialize application state");
-
-    let router = api::router(state).layer(tower_http::trace::TraceLayer::new_for_http());
+    init_db(&connect_db().expect("Create DB connection")).expect("Init DB tables");
+    let router = api::router().layer(tower_http::trace::TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind(addr)
         .await
@@ -43,8 +41,6 @@ type ResponseResult<T> = Result<Json<T>, ResponseError>;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ResponseError {
-    #[error("DatabaseError: {0}")]
-    Database(#[from] DatabaseError),
     #[error("HttpError: {0}")]
     Http(#[from] reqwest::Error),
     #[error("EnvError: {0}")]
@@ -54,7 +50,6 @@ pub enum ResponseError {
 impl IntoResponse for ResponseError {
     fn into_response(self) -> axum::response::Response {
         let code = match self {
-            ResponseError::Database(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ResponseError::Http(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ResponseError::Environment(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };

@@ -18,7 +18,6 @@ pub struct InstallmentsModel {
     savings: Decimal,
 }
 
-#[axum_macros::debug_handler]
 pub async fn handler(Query(params): Query<Params>) -> Json<InstallmentsModel> {
     let discount = params.financed - params.upfront;
     let installment_value = params.financed / Decimal::from(params.installments);

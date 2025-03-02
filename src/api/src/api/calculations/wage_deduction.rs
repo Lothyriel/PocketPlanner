@@ -37,7 +37,7 @@ fn get_deductions(gross_wage: Decimal, dependents: Decimal) -> WageDeductionsMod
     let o = ranges
         .iter()
         .find(|x| x.min < gross_wage - r && (x.max > gross_wage - r))
-        .expect("Expected at least one value in range");
+        .expect("At least one value in range");
 
     let c = gross_wage - r - dependents * dependent_discount;
     let l = o.percent / dec!(100);
@@ -71,7 +71,7 @@ fn get_inss(gross_wage: Decimal) -> InssDeduction {
         .iter()
         .enumerate()
         .find(|(_, x)| x.min <= gross_wage && gross_wage <= x.max)
-        .expect("Expected to find at least one value in range");
+        .expect("To find at least one value in range");
 
     let inss_deduction = dec!(0.14) * ranges[3].max - dec!(174.08);
 
