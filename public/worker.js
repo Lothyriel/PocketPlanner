@@ -20,12 +20,12 @@ self.addEventListener('install', (event) => {
   )
 })
 
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', event => {
   const path = event.request.url;
   const origin = `${self.location.origin}/fragments`
 
   if (path.startsWith(origin)) {
-    const render = renderFromWasm(path.slice(origin.length));
+    const render = renderFromWasm(event.request);
     event.respondWith(render)
   } else {
     fetch(event.request)
@@ -44,13 +44,42 @@ self.addEventListener('fetch', (event) => {
 })
 
 /**
- * @param {string} path
- * @returns {Response}
+ * @param {Request} req
+ * @returns {Promise<Response>}
  */
-function renderFromWasm(path) {
-  const fragment = render(path)
+async function renderFromWasm(req) {
+  const form = await getFormData(req)
+  const parts = { form, route: getRoute(req), method: req.method }
+  const fragment = await render(parts)
 
   return new Response(fragment, {
     headers: { "Content-Type": "text/html" },
   })
+}
+
+/**
+ * @param {Request} req
+ * @returns {string}
+ */
+function getRoute(req) {
+  const url = new URL(req.url)
+
+  return url.pathname + url.search
+}
+
+/**
+ * @param {Request} req
+ * @returns {Promise<Object<string, string>>}
+ */
+async function getFormData(req) {
+  if (req.method !== "POST") {
+    return {}
+  }
+
+  const form = await req.formData();
+
+  return Array.from(form).reduce((acc, [key, value]) => {
+    acc[key] = value
+    return acc
+  }, {})
 }
