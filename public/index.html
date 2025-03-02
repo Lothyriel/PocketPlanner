@@ -7,7 +7,7 @@
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 </head>
 
-<script type="module">
+<script>
   navigator.serviceWorker.register('worker.js', {type: "module"})
     .catch(error => {
       console.error('Service Worker registration failed: ', error)
@@ -15,14 +15,14 @@
 </script>
 
 <body>
-  <main>
-    <h1>HTMX Example with Axum</h1>
-    <div id="content">
-      <p>Initial content...</p>
-    </div>
-    <button hx-post="fragments/load-more" hx-target="#content" hx-swap="beforeend">
-      Load More
-    </button>
+  <nav class="sidebar">
+    <ul>
+      <li hx-get="/fragments/transaction" hx-target="#main" hx-swap="innerHTML">Transactions</li>
+    </ul>
+  </nav>
+
+  <main id="main">
+    <p>Hello from Pocket Planner</p>
   </main>
 </body>
 
