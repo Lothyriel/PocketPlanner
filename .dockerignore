@@ -1,4 +1,2 @@
-.git/
-target/
 public/app.js
 public/app_bg.wasm
