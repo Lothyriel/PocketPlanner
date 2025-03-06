@@ -2,13 +2,10 @@ import init, { render } from './app.js'
 
 const CACHE_NAME = 'pp_cache'
 
-self.addEventListener('install', (event) => {
-  (async function () {
-    await init()
-  })()
-
+self.addEventListener('install', event => {
+  console.log("installing")
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
+    caches.open(CACHE_NAME).then(cache => {
       return cache.addAll([
         'index.html',
         'worker.js',
@@ -20,34 +17,57 @@ self.addEventListener('install', (event) => {
   )
 })
 
+self.addEventListener('activate', event => {
+  console.log("activating...")
+  event.waitUntil(init())
+})
+
 self.addEventListener('fetch', event => {
-  const path = event.request.url;
+  const path = event.request.url
   const origin = `${self.location.origin}/fragments`
 
   if (path.startsWith(origin)) {
-    const render = renderFromWasm(event.request);
-    event.respondWith(render)
+    const response = requestFromWasm(event.request)
+    event.respondWith(response)
   } else {
-    fetch(event.request)
-      .then((response) => {
-        if (response.ok) {
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, response.clone());
-          });
-        }
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request);
-      })
+    const response = requestFromNetwork(event)
+    event.respondWith(response)
   }
 })
+
+/**
+ * @param {Event} event
+ * @returns {Promise<Response>}
+ */
+ async function requestFromNetwork(event) {
+  try {
+    const response = await fetch(event.request)
+    event.waitUntil(putInCache(event.request, response.clone()))
+    return response
+  } catch (error) {
+    console.error(error)
+    const response = await caches.match(event.request)
+
+    if (response) {
+      return response
+    }
+    return new Response("Network error happened", {
+      status: 408,
+      headers: { "Content-Type": "text/plain" },
+    })
+  }
+}
+
+async function putInCache(request, response) {
+  const cache = await caches.open(CACHE_NAME)
+  await cache.put(request, response)
+}
 
 /**
  * @param {Request} req
  * @returns {Promise<Response>}
  */
-async function renderFromWasm(req) {
+ async function requestFromWasm(req) {
   const form = await getFormData(req)
   const parts = { form, route: getRoute(req), method: req.method }
   const fragment = await render(parts)
@@ -61,7 +81,7 @@ async function renderFromWasm(req) {
  * @param {Request} req
  * @returns {string}
  */
-function getRoute(req) {
+ function getRoute(req) {
   const url = new URL(req.url)
 
   return url.pathname + url.search
@@ -69,17 +89,14 @@ function getRoute(req) {
 
 /**
  * @param {Request} req
- * @returns {Promise<Object<string, string>>}
+ * @returns {Promise<string?>}
  */
-async function getFormData(req) {
+ async function getFormData(req) {
   if (req.method !== "POST") {
-    return {}
+    return null
   }
 
-  const form = await req.formData();
+  const form = await req.formData()
 
-  return Array.from(form).reduce((acc, [key, value]) => {
-    acc[key] = value
-    return acc
-  }, {})
+  return new URLSearchParams([...form]).toString()
 }

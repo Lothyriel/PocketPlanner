@@ -1,14 +1,30 @@
 use anyhow::Result;
 use rusqlite::{params, Connection};
 
-pub fn view(conn: &mut Connection) -> Result<View> {
-    let transactions = get_transactions(conn)?;
+use axum::{response::IntoResponse, routing, Form, Router};
+
+use crate::connect_db;
+
+use super::AppError;
+
+pub fn router() -> Router {
+    Router::new()
+        .route("/", routing::get(view))
+        .route("/add", routing::post(action))
+}
+
+async fn view() -> Result<impl IntoResponse, AppError> {
+    let mut conn = connect_db()?;
+
+    let transactions = get_transactions(&mut conn)?;
 
     Ok(View { transactions })
 }
 
-pub fn action(conn: &mut Connection, tx: Transaction) -> Result<Action> {
-    add_transaction(conn, &tx)?;
+async fn action(Form(tx): Form<Transaction>) -> Result<impl IntoResponse, AppError> {
+    let mut conn = connect_db()?;
+
+    add_transaction(&mut conn, &tx)?;
 
     Ok(Action { tx })
 }

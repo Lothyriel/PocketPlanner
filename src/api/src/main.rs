@@ -1,6 +1,4 @@
-use application::connect_db;
 use axum::{response::IntoResponse, Json};
-use lib::templates::init_db;
 use reqwest::StatusCode;
 use serde_json::json;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -21,7 +19,8 @@ async fn main() {
 
     let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 8080));
 
-    init_db(&connect_db().expect("Create DB connection")).expect("Init DB tables");
+    lib::init_db().expect("Init DB tables");
+
     let router = api::router().layer(tower_http::trace::TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind(addr)

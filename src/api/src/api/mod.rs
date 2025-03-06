@@ -1,6 +1,5 @@
 mod auth;
 mod calculations;
-mod fragments;
 mod user;
 
 use axum::{routing, Router};
@@ -10,7 +9,7 @@ pub fn router() -> Router {
     Router::new()
         .route("/health", routing::get(|| async { "healthy!" }))
         .nest("/api", api_router())
-        .nest("/fragments", fragments::router())
+        .nest("/fragments", lib::fragments::router())
         .fallback_service(ServeDir::new("public"))
 }
 

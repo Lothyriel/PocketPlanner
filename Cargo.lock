@@ -100,13 +100,14 @@ name = "app"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "askama",
+ "axum",
  "console_error_panic_hook",
+ "http-body-util",
  "lib",
- "rusqlite",
  "serde",
  "serde-wasm-bindgen",
  "sqlite-wasm-rs",
+ "tower",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
@@ -1108,6 +1109,7 @@ dependencies = [
  "anyhow",
  "askama",
  "askama_axum",
+ "axum",
  "rusqlite",
  "serde",
 ]

@@ -1,28 +1,50 @@
 use anyhow::{anyhow, Result};
-use askama::Template;
-use lib::templates::init_db;
-use rusqlite::Connection;
-use std::collections::HashMap;
+use axum::{
+    body::Body,
+    http::{Method, Request},
+};
+use http_body_util::BodyExt;
+use tower::ServiceExt;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
-
-mod fragments;
-mod router;
 
 #[wasm_bindgen]
 pub async fn render(req: JsValue) -> String {
-    let req = deser(req).expect("Valid request object");
+    let req: ReqParts = deser(req).expect("Valid request object");
 
-    router::render(req).await.unwrap_or_else(render_error)
-}
+    let method = Method::from_bytes(req.method.as_bytes()).expect("Valid HTTP method");
 
-fn render_error(error: anyhow::Error) -> String {
-    lib::templates::error(error)
-        .render()
-        .expect("Render error template")
-}
+    let route = req
+        .route
+        .strip_prefix("/fragments")
+        .expect("strip /fragments prefix");
 
-fn connect_db() -> Result<Connection> {
-    Ok(Connection::open("opfs-sahpool.db")?)
+    let body = if let Some(form) = req.form {
+        Body::from(form)
+    } else {
+        Body::empty()
+    };
+
+    let req = Request::builder()
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .uri(route)
+        .method(method)
+        .body(body)
+        .expect("Valid request");
+
+    let response = lib::fragments::router()
+        .oneshot(req)
+        .await
+        .expect("Valid response");
+
+    let response = response
+        .into_body()
+        .collect()
+        .await
+        .expect("Get response body as bytes")
+        .to_bytes()
+        .to_vec();
+
+    String::from_utf8(response).expect("Valid UTF-8 String")
 }
 
 fn deser<T: serde::de::DeserializeOwned>(val: JsValue) -> Result<T> {
@@ -33,30 +55,14 @@ fn deser<T: serde::de::DeserializeOwned>(val: JsValue) -> Result<T> {
 struct ReqParts {
     method: String,
     route: String,
-    form: HashMap<String, String>,
-}
-
-impl ReqParts {
-    fn strip_route(&self) -> &str {
-        self.route
-            .strip_prefix("/fragments")
-            .expect("/fragments prefix")
-    }
-}
-
-type Form = HashMap<String, String>;
-
-trait FromFormData {
-    fn from(form: Form) -> Result<Self>
-    where
-        Self: Sized;
+    form: Option<String>,
 }
 
 #[wasm_bindgen(start)]
 pub async fn start() {
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
-    init_db(&connect_db().expect("Connect DB in wasm")).expect("Create DB in wasm");
+    lib::init_db().expect("Create DB in wasm");
 
     web_sys::console::log_1(&JsValue::from_str("wasm mod started"));
 
