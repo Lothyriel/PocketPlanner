@@ -7,6 +7,7 @@ use super::model::credit_card::CreditCardEntry;
 pub mod nubank;
 pub mod picpay;
 
+#[allow(dead_code)]
 pub trait CreditCardInvoiceExtractor {
     fn extract_entries(
         data: impl Read,

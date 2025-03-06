@@ -3,6 +3,7 @@ use rust_decimal::Decimal;
 
 use crate::{application::extractors::ParsingError, extensions::chrono::NaiveDateExt};
 
+#[allow(dead_code)]
 pub struct CreditCardEntry {
     pub date: NaiveDate,
     pub description: String,
