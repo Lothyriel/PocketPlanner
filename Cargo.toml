@@ -1,3 +1,5 @@
 [workspace]
 members = ["src/api", "src/app", "src/lib"]
 resolver = "2"
+
+default-members = ["src/api"]
