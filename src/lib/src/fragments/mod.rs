@@ -1,5 +1,9 @@
 use anyhow::Error;
-use axum::{response::IntoResponse, Router};
+use askama_web::WebTemplate;
+use axum::{
+    response::{IntoResponse, Response},
+    Router,
+};
 
 pub mod transaction;
 
@@ -11,7 +15,7 @@ pub fn error(error: Error) -> ErrorTemplate {
     ErrorTemplate { error }
 }
 
-#[derive(askama::Template)]
+#[derive(askama::Template, WebTemplate)]
 #[template(path = "error.html")]
 pub struct ErrorTemplate {
     error: Error,
@@ -20,7 +24,7 @@ pub struct ErrorTemplate {
 struct AppError(anyhow::Error);
 
 impl IntoResponse for AppError {
-    fn into_response(self) -> askama_axum::Response {
+    fn into_response(self) -> Response {
         error(self.0).into_response()
     }
 }

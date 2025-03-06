@@ -1,4 +1,5 @@
 use anyhow::Result;
+use askama_web::WebTemplate;
 use rusqlite::{params, Connection};
 
 use axum::{response::IntoResponse, routing, Form, Router};
@@ -63,13 +64,13 @@ pub struct Transaction {
     pub description: String,
 }
 
-#[derive(askama::Template)]
+#[derive(askama::Template, WebTemplate)]
 #[template(path = "transaction/view.html")]
 pub struct View {
     transactions: Vec<Transaction>,
 }
 
-#[derive(askama::Template)]
+#[derive(askama::Template, WebTemplate)]
 #[template(path = "transaction/action.html")]
 pub struct Action {
     tx: Transaction,

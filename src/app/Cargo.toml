@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-axum = { version = "0.7.9", default-features = false }
+axum = { version = "0.8.1", default-features = false }
 tower = "0.5.2"
 http-body-util = "0.1.2"
 anyhow = "1.0.96"
