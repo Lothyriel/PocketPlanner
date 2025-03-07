@@ -12,7 +12,7 @@ pub fn init_db() -> Result<()> {
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS transactions (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            id          INTEGER PRIMARY KEY,
             amount      INTEGER NOT NULL,
             description TEXT NOT NULL
         )",
