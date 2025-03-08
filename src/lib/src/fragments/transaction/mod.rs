@@ -4,9 +4,7 @@ use rusqlite::{params, Connection};
 
 use axum::{response::IntoResponse, routing, Form, Router};
 
-use crate::connect_db;
-
-use super::AppError;
+use crate::{connect_db, AppError};
 
 pub fn router() -> Router {
     Router::new()
@@ -14,7 +12,7 @@ pub fn router() -> Router {
         .route("/add", routing::post(action))
 }
 
-async fn view() -> Result<impl IntoResponse, AppError> {
+pub async fn view() -> Result<View, AppError> {
     let mut conn = connect_db()?;
 
     let transactions = get_transactions(&mut conn)?;
@@ -59,7 +57,7 @@ fn add_transaction(conn: &mut Connection, transaction: &Transaction) -> Result<(
 }
 
 #[derive(serde::Deserialize)]
-pub struct Transaction {
+struct Transaction {
     pub amount: u64,
     pub description: String,
 }
@@ -72,6 +70,6 @@ pub struct View {
 
 #[derive(askama::Template, WebTemplate)]
 #[template(path = "transaction/action.html")]
-pub struct Action {
+struct Action {
     tx: Transaction,
 }

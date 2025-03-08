@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Pocket Planner</title>
-  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
 </head>
 
 <script>
@@ -17,12 +17,14 @@
 <body>
   <nav class="sidebar">
     <ul>
-      <li hx-get="/fragments/transaction" hx-target="#main" hx-swap="innerHTML">Transactions</li>
+      <li hx-get="/fragments/transaction" hx-push-url="/transactions" hx-target="#main" hx-swap="innerHTML">
+        Transactions
+      </li>
     </ul>
   </nav>
 
   <main id="main">
-    <p>Hello from Pocket Planner</p>
+    {{content|safe}}
   </main>
 </body>
 

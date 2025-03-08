@@ -1,6 +1,7 @@
-use axum::{response::IntoResponse, Json};
+use axum::{response::IntoResponse, Json, Router};
 use reqwest::StatusCode;
 use serde_json::json;
+use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod api;
@@ -21,7 +22,7 @@ async fn main() {
 
     lib::init_db().expect("Init DB tables");
 
-    let router = api::router().layer(tower_http::trace::TraceLayer::new_for_http());
+    let router = router().layer(tower_http::trace::TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind(addr)
         .await
@@ -34,6 +35,12 @@ async fn main() {
     if let Err(err) = server.await {
         tracing::error!("{}", err);
     }
+}
+
+pub fn router() -> Router {
+    lib::router()
+        .nest("/api", api::router())
+        .fallback_service(ServeDir::new("public"))
 }
 
 type ResponseResult<T> = Result<Json<T>, ResponseError>;
