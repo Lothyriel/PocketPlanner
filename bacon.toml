@@ -9,12 +9,10 @@ env.CARGO_TERM_COLOR = "always"
 # on every change (an alternative would be to use the 'F5' key manually in bacon).
 # If you often use this job, it makes sense to override the 'r' key by adding
 # a binding `r = job:run-long` at the end of this file .
-[jobs.run-long]
+[jobs.server]
 command = [
   "cargo",
   "run",
-  "-p",
-  "api",
   # put launch parameters for your program behind a `--` separator
 ]
 need_stdout = true
@@ -22,6 +20,15 @@ allow_warnings = true
 background = false
 on_change_strategy = "kill_then_restart"
 
+[jobs.wasm]
+command = [
+  "sh",
+  "./build.sh",
+  # put launch parameters for your program behind a `--` separator
+]
+need_stdout = true
+on_change_strategy = "wait_then_restart"
+
 [keybindings]
 c = "job:clippy-all"
-r = "job:run-long"
+w = "job:wasm"
