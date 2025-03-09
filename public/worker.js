@@ -27,7 +27,7 @@ self.addEventListener("fetch", event => {
   event.respondWith(intercept(event))
 })
 
-const REQUEST_PRIORITY = [fromCache, fromWasm, fromNetwork, fromUnable]
+const REQUEST_PRIORITY = [fromCache, fromWasm, fromNetwork]
 
 /**
  * @param {Event} event
@@ -37,13 +37,12 @@ async function intercept(event) {
   for (const method of REQUEST_PRIORITY) {
     const response = await method(event.request)
 
-    console.log("trying", method.name, "for", event.request.url)
-
     if (response?.ok) {
-      console.log(method.name, "was ok for", event.request.url)
       return response
     }
   }
+
+  return offlineResponse(req)
 }
 
 /**
@@ -55,7 +54,7 @@ function fromCache(req) {
 }
 
 /**
- * @param {Request} req 
+ * @param {Request} req
  * @returns {Promise<Response>}
  */
 function fromNetwork(req) {
@@ -64,9 +63,9 @@ function fromNetwork(req) {
 
 /**
  * @param {Request} req
- * @returns {Promise<Response>}
+ * @returns {Response}
  */
-async function fromUnable(req) {
+function offlineResponse(req) {
   return new Response(`Network error happened ${req.method} - ${req.url}`, {
     headers: { "Content-Type": "text/plain" },
   })
@@ -77,11 +76,14 @@ async function fromUnable(req) {
  * @returns {Promise<Response>}
  */
 async function fromWasm(req) {
-  const form = await getFormData(req)
+  const params = {
+    method: req.method,
+    url: stripUrlHost(req),
+    form: await getFormData(req),
+    headers: Object.fromEntries(req.headers),
+  }
 
-  const response = await render(req.method, stripUrlHost(req), form)
-
-  return response
+  return await render(params)
 }
 
 /**
@@ -99,7 +101,7 @@ function stripUrlHost(req) {
  * @returns {Promise<string?>}
  */
 async function getFormData(req) {
-  if (req.method !== "POST") {
+  if (req.method === "GET") {
     return null
   }
 

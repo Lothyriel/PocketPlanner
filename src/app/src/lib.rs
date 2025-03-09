@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use axum::{
     body::Body,
-    http::{response::Parts, HeaderMap, HeaderValue, Method, Request},
+    http::{response::Parts, HeaderMap, HeaderValue, Method, Request as AxumRequest},
 };
 use http_body_util::BodyExt;
 use tower::ServiceExt;
@@ -10,8 +10,10 @@ use wasm_bindgen::{prelude::wasm_bindgen, JsError, JsValue};
 use web_sys::{Response, ResponseInit};
 
 #[wasm_bindgen]
-pub async fn render(method: String, uri: String, form: Option<String>) -> JsResult<Response> {
-    let req = build_request(&method, &uri, form)?;
+pub async fn render(req: JsValue) -> JsResult<Response> {
+    let req = serde_wasm_bindgen::from_value(req)?;
+
+    let req = build_request(req).await?;
 
     let res = lib::router().oneshot(req).await?;
 
@@ -21,42 +23,55 @@ pub async fn render(method: String, uri: String, form: Option<String>) -> JsResu
 
     let options = build_options(parts);
 
-    Response::new_with_opt_u8_array_and_init(Some(body.as_mut()), &options?)
-        .map_err(|_| JsError::new(&format!("Error creating response {method} - {uri}")))
+    Response::new_with_opt_u8_array_and_init(Some(body.as_mut()), &options?).map_err(to_err)
+}
+
+#[derive(serde::Deserialize, Debug)]
+struct Request {
+    method: String,
+    url: String,
+    headers: HashMap<String, String>,
+    form: Option<String>,
 }
 
 fn build_options(parts: Parts) -> JsResult<ResponseInit> {
     let options = ResponseInit::new();
 
     options.set_status(parts.status.as_u16());
-    options.set_headers(&serde_wasm_bindgen::to_value(&get_headers(&parts.headers))?);
+    options.set_headers(&get_headers(&parts.headers)?);
 
     Ok(options)
 }
 
-fn get_headers(header_map: &HeaderMap<HeaderValue>) -> HashMap<&str, Option<&str>> {
-    header_map
+fn get_headers(headers: &HeaderMap<HeaderValue>) -> JsResult<JsValue> {
+    let headers: HashMap<_, _> = headers
         .iter()
         .map(|(name, value)| (name.as_str(), value.to_str().ok()))
-        .collect()
+        .collect();
+
+    Ok(serde_wasm_bindgen::to_value(&headers)?)
 }
 
-fn build_request(method: &str, uri: &str, form: Option<String>) -> JsResult<Request<Body>> {
-    let method = Method::from_bytes(method.as_bytes())?;
+async fn build_request(req: Request) -> JsResult<AxumRequest<Body>> {
+    let method = Method::from_bytes(req.method.as_bytes())?;
 
-    let body = if let Some(form) = form {
+    let body = if let Some(form) = req.form {
         Body::from(form)
     } else {
         Body::empty()
     };
 
-    let req = Request::builder()
-        .header("Content-Type", "application/x-www-form-urlencoded")
-        .uri(uri)
-        .method(method)
-        .body(body)?;
+    let mut builder = AxumRequest::builder().uri(req.url).method(method);
 
-    Ok(req)
+    for (name, value) in req.headers {
+        builder = builder.header(name, value);
+    }
+
+    Ok(builder.body(body)?)
+}
+
+fn to_err(v: JsValue) -> JsError {
+    JsError::new(&format!("{:?}", v))
 }
 
 type JsResult<T> = Result<T, JsError>;
