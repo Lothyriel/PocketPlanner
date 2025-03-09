@@ -1,24 +1,25 @@
 use axum::{
-    extract::Request,
+    extract::{Request, State},
     http::{header, StatusCode},
     middleware::Next,
     response::IntoResponse,
     Json,
 };
 use axum_extra::extract::cookie::CookieJar;
-use jsonwebtoken as jwt;
+use jsonwebtoken::{self as jwt};
 use jwt::{errors::Error, jwk::Jwk, TokenData};
 use reqwest::Client;
 use serde_json::json;
 
-use crate::ResponseResult;
+use crate::{application::AppState, ResponseResult};
 
 pub async fn auth(
+    State(state): State<AppState>,
     cookie_jar: CookieJar,
     mut req: Request,
     next: Next,
 ) -> Result<impl IntoResponse, AuthError> {
-    insert_claims(cookie_jar, &mut req).await?;
+    insert_claims(state, cookie_jar, &mut req).await?;
 
     Ok(next.run(req).await)
 }
@@ -54,7 +55,11 @@ pub async fn refresh(Json(params): Json<Params>) -> ResponseResult<()> {
     Ok(Json(()))
 }
 
-async fn insert_claims(cookie_jar: CookieJar, req: &mut Request) -> Result<(), AuthError> {
+async fn insert_claims(
+    state: AppState,
+    cookie_jar: CookieJar,
+    req: &mut Request,
+) -> Result<(), AuthError> {
     let token = cookie_jar
         .get("token")
         .map(|cookie| cookie.value())
@@ -65,15 +70,33 @@ async fn insert_claims(cookie_jar: CookieJar, req: &mut Request) -> Result<(), A
 
     let kid = header.kid.ok_or(AuthError::InvalidKid)?;
 
-    let jwks = get_google_jwks().await?;
-
-    let jwk = jwks.find(&kid).ok_or(AuthError::InvalidKid)?;
-
-    let token_data = get_token_data(token, jwk)?;
+    let token_data = get_token_data(state, token, kid).await?;
 
     req.extensions_mut().insert(token_data.claims);
 
     Ok(())
+}
+
+async fn get_token_data(
+    state: AppState,
+    token: &str,
+    kid: String,
+) -> Result<TokenData<UserClaims>, AuthError> {
+    let jwkset = state.google_keys.read().await;
+
+    let jwk = match jwkset.find(&kid) {
+        Some(k) => k,
+        None => {
+            drop(jwkset);
+            let mut jwkset = state.google_keys.write().await;
+            *jwkset = get_google_jwks().await?;
+
+            let jwk = jwkset.find(&kid).ok_or(AuthError::InvalidKid)?;
+            return Ok(decode_token_data(token, jwk)?);
+        }
+    };
+
+    Ok(decode_token_data(token, jwk)?)
 }
 
 fn get_token_from_headers(req: &Request) -> Option<&str> {
@@ -83,7 +106,7 @@ fn get_token_from_headers(req: &Request) -> Option<&str> {
         .and_then(|value| value.starts_with("Bearer ").then(|| &value[7..]))
 }
 
-fn get_token_data(token: &str, jwk: &Jwk) -> Result<TokenData<UserClaims>, Error> {
+fn decode_token_data(token: &str, jwk: &Jwk) -> Result<TokenData<UserClaims>, Error> {
     let mut validation = jwt::Validation::new(jwt::Algorithm::RS256);
 
     validation.set_issuer(&["https://accounts.google.com"]);
@@ -96,7 +119,7 @@ fn get_token_data(token: &str, jwk: &Jwk) -> Result<TokenData<UserClaims>, Error
     jwt::decode::<UserClaims>(token, &jwt::DecodingKey::from_jwk(jwk)?, &validation)
 }
 
-async fn get_google_jwks() -> Result<jwt::jwk::JwkSet, reqwest::Error> {
+pub async fn get_google_jwks() -> Result<jwt::jwk::JwkSet, reqwest::Error> {
     let response = reqwest::get("https://www.googleapis.com/oauth2/v3/certs").await?;
 
     response.json().await

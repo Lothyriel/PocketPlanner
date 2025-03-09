@@ -1,6 +1,10 @@
+use std::sync::Arc;
+
+use application::AppState;
 use axum::{response::IntoResponse, Json, Router};
 use reqwest::StatusCode;
 use serde_json::json;
+use tokio::sync::RwLock;
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -20,9 +24,13 @@ async fn main() {
 
     let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 8080));
 
-    lib::init_db().expect("Init DB tables");
+    let jwkset = api::get_google_jwks().await.expect("Get google JWKset");
 
-    let router = router().layer(tower_http::trace::TraceLayer::new_for_http());
+    let state = AppState {
+        google_keys: Arc::new(RwLock::new(jwkset)),
+    };
+
+    let router = router(state).layer(tower_http::trace::TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind(addr)
         .await
@@ -37,9 +45,9 @@ async fn main() {
     }
 }
 
-pub fn router() -> Router {
+pub fn router(state: AppState) -> Router {
     lib::router()
-        .nest("/api", api::router())
+        .nest("/api", api::router(state))
         .fallback_service(ServeDir::new("public"))
 }
 
