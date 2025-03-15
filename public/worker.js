@@ -2,30 +2,39 @@ import init, { render } from "./app.js"
 
 const CACHE_NAME = "pp_cache"
 
+const CACHED_ASSETS = [
+  "icon-192.png",
+  "icon-512.png",
+  "favicon.ico",
+  "manifest.json",
+  "worker.js",
+  "app.js",
+  "app_bg.wasm",
+  "https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js",
+]
+
 self.addEventListener("install", event => {
   console.log("installing")
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll([
-        "favicon.ico",
-        "manifest.json",
-        "worker.js",
-        "app.js",
-        "app_bg.wasm",
-        "https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js",
-      ])
+      return cache.addAll(CACHED_ASSETS)
     })
   )
 })
 
 self.addEventListener("activate", event => {
   console.log("activating...")
+  event.waitUntil(clearCache())
   event.waitUntil(init())
 })
 
 self.addEventListener("fetch", event => {
   event.respondWith(intercept(event))
 })
+
+async function clearCache() {
+  return Promise.all(CACHED_ASSETS.map(n => caches.delete(n)))
+}
 
 const REQUEST_PRIORITY = [fromCache, fromWasm, fromNetwork]
 
