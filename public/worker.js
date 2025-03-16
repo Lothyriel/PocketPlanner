@@ -25,7 +25,6 @@ self.addEventListener("install", event => {
 self.addEventListener("activate", event => {
   console.log("activating...")
   event.waitUntil(clearCache())
-  event.waitUntil(init())
 })
 
 self.addEventListener("fetch", event => {
@@ -85,6 +84,8 @@ function offlineResponse(req) {
  * @returns {Promise<Response>}
  */
 async function fromWasm(req) {
+  await init()
+
   const params = {
     method: req.method,
     url: stripUrlHost(req),
