@@ -32,9 +32,9 @@ impl IntoResponse for AppError {
     }
 }
 
-impl<E: Into<anyhow::Error>> From<E> for AppError {
-    fn from(err: E) -> Self {
-        Self(err.into())
+impl From<anyhow::Error> for AppError {
+    fn from(err: anyhow::Error) -> Self {
+        Self(err)
     }
 }
 
