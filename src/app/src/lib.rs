@@ -80,11 +80,19 @@ type JsResult<T> = Result<T, JsError>;
 pub async fn start() {
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
-    lib::init_db().expect("Create DB in wasm");
+    log("wasm post start...");
 
-    web_sys::console::log_1(&JsValue::from_str("wasm mod started"));
-
-    sqlite_wasm_rs::export::install_opfs_sahpool(None, true)
+    sqlite_wasm_rs::export::install_opfs_sahpool(None, false)
         .await
         .expect("OPFS");
+
+    log("OPFS registered");
+
+    lib::init_db().expect("Create DB in wasm");
+
+    log("DB seed finished");
+}
+
+fn log(msg: &str) {
+    web_sys::console::log_1(&JsValue::from_str(msg))
 }
