@@ -45,13 +45,12 @@ pub fn connect_db() -> Result<Connection> {
 pub fn init_db() -> Result<()> {
     let conn = connect_db()?;
 
-    conn.execute(
+    conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS transactions (
             id          INTEGER PRIMARY KEY,
             amount      INTEGER NOT NULL,
             description TEXT NOT NULL
         )",
-        [],
     )?;
 
     Ok(())
