@@ -7,7 +7,7 @@ COPY ./Cargo.toml ./
 
 RUN cargo install wasm-pack && \
   cargo build --release -p api && \
-  wasm-pack build ./src/app --target web --no-typescript --release
+  wasm-pack build ./src/app --target web --no-typescript --profile bin-size
 
 # Prod stage
 FROM debian:stable-slim

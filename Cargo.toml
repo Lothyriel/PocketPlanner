@@ -3,3 +3,11 @@ members = ["src/api", "src/app", "src/lib"]
 resolver = "2"
 
 default-members = ["src/api"]
+
+[profile.bin-size]
+inherits = "release"
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
