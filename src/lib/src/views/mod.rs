@@ -1,13 +1,14 @@
 use askama::Template;
 use askama_web::WebTemplate;
-use axum::{response::IntoResponse, routing, Router};
+use axum::{extract::State, response::IntoResponse, routing, Router};
 
-use crate::{fragments::*, AppError};
+use crate::{fragments::*, AppError, AppState};
 
-pub fn router() -> Router {
+pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/", routing::get(home))
         .route("/transactions", routing::get(view_transactions))
+        .with_state(state)
 }
 
 async fn home() -> IndexTemplate<HomeTemplate> {
@@ -16,9 +17,10 @@ async fn home() -> IndexTemplate<HomeTemplate> {
     }
 }
 
-async fn view_transactions() -> Result<impl IntoResponse, AppError> {
+async fn view_transactions(state: State<AppState>) -> Result<impl IntoResponse, AppError> {
+    //todo: maybe add this to a macro to check if the route wants HTMX fragment or whole page reload
     let index = IndexTemplate {
-        content: transaction::view().await?,
+        content: transaction::view(state).await?,
     };
 
     Ok(index)

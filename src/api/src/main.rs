@@ -1,9 +1,12 @@
 use std::sync::Arc;
 
-use application::AppState;
+use anyhow::Result;
+use application::ApiState;
 use axum::{response::IntoResponse, Json, Router};
+use lib::{AppState, Db};
 use reqwest::StatusCode;
 use serde_json::json;
+use surrealdb::{engine::any, opt::auth::Root};
 use tokio::sync::RwLock;
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -29,10 +32,14 @@ async fn main() {
     let jwkset = api::get_google_jwks().await.expect("Get google JWKset");
 
     let state = AppState {
+        db: get_db().await.expect("Get SurrealDb conn"),
+    };
+
+    let api_state = ApiState {
         google_keys: Arc::new(RwLock::new(jwkset)),
     };
 
-    let router = router(state).layer(tower_http::trace::TraceLayer::new_for_http());
+    let router = router(state, api_state).layer(tower_http::trace::TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind(addr)
         .await
@@ -47,9 +54,24 @@ async fn main() {
     }
 }
 
-pub fn router(state: AppState) -> Router {
-    lib::router()
-        .nest("/api", api::router(state))
+async fn get_db() -> Result<Db> {
+    let db_adrr = std::env::var("SURREAL_DB_ADDR")?;
+
+    let db = any::connect(db_adrr).await?;
+
+    db.use_ns("pp").use_db("core").await?;
+
+    let password = &std::env::var("SURREAL_DB_PASS")?;
+    let username = &std::env::var("SURREAL_DB_USER")?;
+
+    db.signin(Root { username, password }).await?;
+
+    Ok(db)
+}
+
+pub fn router(state: AppState, api_state: ApiState) -> Router {
+    lib::router(state)
+        .nest("/api", api::router(api_state))
         .fallback_service(ServeDir::new("public"))
 }
 

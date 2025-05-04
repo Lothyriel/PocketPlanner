@@ -9,4 +9,4 @@ anyhow = "1.0.96"
 askama = { version = "0.14.0" }
 askama_web = { version = "0.14.0", features = ["axum-0.8"] }
 serde = { version = "1.0.218", features = ["derive"] }
-rusqlite = { git = "https://github.com/Spxg/rusqlite" }
+surrealdb = "2.3.0"

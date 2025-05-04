@@ -1,16 +1,16 @@
-use anyhow::{Error, Result};
+use anyhow::Error;
 use askama_web::WebTemplate;
 use axum::{
     response::{IntoResponse, Response},
     Router,
 };
-use rusqlite::Connection;
+use surrealdb::{engine::any::Any, Surreal};
 
 mod fragments;
 mod views;
 
-pub fn router() -> Router {
-    views::router().nest("/fragments", fragments::router())
+pub fn router(state: AppState) -> Router {
+    views::router(state.clone()).nest("/fragments", fragments::router(state))
 }
 
 fn error(error: Error) -> ErrorTemplate {
@@ -38,20 +38,9 @@ impl From<anyhow::Error> for AppError {
     }
 }
 
-pub fn connect_db() -> Result<Connection> {
-    Ok(Connection::open("user.db")?)
-}
+pub type Db = Surreal<Any>;
 
-pub fn init_db() -> Result<()> {
-    let conn = connect_db()?;
-
-    conn.execute_batch(
-        "CREATE TABLE IF NOT EXISTS transactions (
-            id          INTEGER PRIMARY KEY,
-            amount      INTEGER NOT NULL,
-            description TEXT NOT NULL
-        )",
-    )?;
-
-    Ok(())
+#[derive(Clone)]
+pub struct AppState {
+    pub db: Db,
 }

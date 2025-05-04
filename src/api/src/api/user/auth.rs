@@ -11,10 +11,10 @@ use jwt::{errors::Error, jwk::Jwk, TokenData};
 use reqwest::Client;
 use serde_json::json;
 
-use crate::{application::AppState, ResponseResult};
+use crate::{application::ApiState, ResponseResult};
 
 pub async fn auth(
-    State(state): State<AppState>,
+    State(state): State<ApiState>,
     cookie_jar: CookieJar,
     mut req: Request,
     next: Next,
@@ -56,7 +56,7 @@ pub async fn refresh(Json(params): Json<Params>) -> ResponseResult<()> {
 }
 
 async fn insert_claims(
-    state: AppState,
+    state: ApiState,
     cookie_jar: CookieJar,
     req: &mut Request,
 ) -> Result<(), AuthError> {
@@ -78,7 +78,7 @@ async fn insert_claims(
 }
 
 async fn get_token_data(
-    state: AppState,
+    state: ApiState,
     token: &str,
     kid: String,
 ) -> Result<TokenData<UserClaims>, AuthError> {

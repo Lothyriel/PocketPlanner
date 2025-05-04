@@ -7,6 +7,6 @@ pub mod extractors;
 pub mod model;
 
 #[derive(Clone)]
-pub struct AppState {
+pub struct ApiState {
     pub google_keys: Arc<RwLock<JwkSet>>,
 }

@@ -2,13 +2,13 @@ use axum::{routing, Extension, Json, Router};
 
 use auth::UserClaims;
 
-use crate::application::AppState;
+use crate::application::ApiState;
 
 mod auth;
 
 pub use auth::get_google_jwks;
 
-pub fn router(state: AppState) -> Router {
+pub fn router(state: ApiState) -> Router {
     Router::new()
         .route("/summary", routing::get(handler))
         // TODO fix this refresh token endpoint and his location

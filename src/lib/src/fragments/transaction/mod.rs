@@ -1,57 +1,46 @@
 use anyhow::Result;
 use askama_web::WebTemplate;
-use rusqlite::{params, Connection};
 
-use axum::{response::IntoResponse, routing, Form, Router};
+use axum::{extract::State, response::IntoResponse, routing, Form, Router};
 
-use crate::{connect_db, AppError};
+use crate::{AppError, AppState, Db};
 
-pub fn router() -> Router {
+pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/", routing::get(view))
         .route("/add", routing::post(action))
+        .with_state(state)
 }
 
-pub async fn view() -> Result<View, AppError> {
-    let mut conn = connect_db()?;
-
-    let transactions = get_transactions(&mut conn)?;
+pub async fn view(State(state): State<AppState>) -> Result<View, AppError> {
+    let transactions = get_transactions(&state.db).await?;
 
     Ok(View { transactions })
 }
 
-async fn action(Form(tx): Form<Transaction>) -> Result<impl IntoResponse, AppError> {
-    let mut conn = connect_db()?;
-
-    add_transaction(&mut conn, &tx)?;
+async fn action(
+    State(state): State<AppState>,
+    Form(tx): Form<Transaction>,
+) -> Result<impl IntoResponse, AppError> {
+    add_transaction(&state.db, &tx).await?;
 
     Ok(Action { tx })
 }
 
-fn get_transactions(conn: &mut Connection) -> Result<Vec<Transaction>> {
-    let mut statement = conn.prepare("SELECT amount, description FROM transactions")?;
-
-    let rows = statement.query_map([], |row| {
-        Ok(Transaction {
-            amount: row.get(0)?,
-            description: row.get(1)?,
-        })
-    })?;
-
-    let transactions = rows.collect::<Result<_, _>>()?;
+async fn get_transactions(db: &Db) -> Result<Vec<Transaction>> {
+    let transactions = db
+        .query("SELECT amount, description FROM transactions")
+        .await?
+        .take(0)?;
 
     Ok(transactions)
 }
 
-fn add_transaction(conn: &mut Connection, transaction: &Transaction) -> Result<()> {
-    let tx = conn.transaction()?;
-
-    tx.execute(
-        "INSERT INTO transactions (amount, description) VALUES (?1, ?2)",
-        params![transaction.amount, transaction.description],
-    )?;
-
-    tx.commit()?;
+async fn add_transaction(conn: &Db, transaction: &Transaction) -> Result<()> {
+    conn.query("INSERT INTO transactions (amount, description) VALUES ($amount, $description)")
+        .bind(("amount", transaction.amount))
+        .bind(("description", transaction.description.clone()))
+        .await?;
 
     Ok(())
 }

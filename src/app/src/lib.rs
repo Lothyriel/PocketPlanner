@@ -5,6 +5,8 @@ use axum::{
     http::{response::Parts, HeaderMap, HeaderValue, Method, Request as AxumRequest},
 };
 use http_body_util::BodyExt;
+use lib::{AppState, Db};
+use surrealdb::engine::any;
 use tower::ServiceExt;
 use wasm_bindgen::{prelude::wasm_bindgen, JsError, JsValue};
 use web_sys::{Response, ResponseInit};
@@ -15,7 +17,9 @@ pub async fn render(req: JsValue) -> JsResult<Response> {
 
     let req = build_request(req).await?;
 
-    let res = lib::router().oneshot(req).await?;
+    let db = get_db().await?;
+
+    let res = lib::router(AppState { db }).oneshot(req).await?;
 
     let (parts, body) = res.into_parts();
 
@@ -24,6 +28,14 @@ pub async fn render(req: JsValue) -> JsResult<Response> {
     let options = build_options(parts);
 
     Response::new_with_opt_u8_array_and_init(Some(body.as_mut()), &options?).map_err(to_err)
+}
+
+async fn get_db() -> JsResult<Db> {
+    let db = any::connect("indxdb://pp_db").await?;
+
+    db.use_ns("pp").use_db("local").await?;
+
+    Ok(db)
 }
 
 #[derive(serde::Deserialize, Debug)]
@@ -79,20 +91,4 @@ type JsResult<T> = Result<T, JsError>;
 #[wasm_bindgen(start)]
 pub async fn start() {
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-
-    log("wasm post start...");
-
-    sqlite_wasm_rs::export::install_opfs_sahpool(None, false)
-        .await
-        .expect("OPFS");
-
-    log("OPFS registered");
-
-    lib::init_db().expect("Create DB in wasm");
-
-    log("DB seed finished");
-}
-
-fn log(msg: &str) {
-    web_sys::console::log_1(&JsValue::from_str(msg))
 }
