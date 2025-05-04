@@ -22,6 +22,8 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
+    dotenvy::dotenv().ok();
+
     let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 8080));
 
     let jwkset = api::get_google_jwks().await.expect("Get google JWKset");
