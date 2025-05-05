@@ -1,9 +1,9 @@
 use axum::Router;
 
-use crate::AppState;
+use crate::infra::DbState;
 
 pub mod transaction;
 
-pub fn router(state: AppState) -> Router {
+pub fn router(state: DbState) -> Router {
     Router::new().nest("/transaction", transaction::router(state))
 }

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use anyhow::Result;
 use application::ApiState;
 use axum::{response::IntoResponse, Json, Router};
-use lib::{AppState, Db};
+use lib::infra::{Db, DbState};
 use reqwest::StatusCode;
 use serde_json::json;
 use surrealdb::{engine::any, opt::auth::Root};
@@ -31,9 +31,9 @@ async fn main() {
 
     let jwkset = api::get_google_jwks().await.expect("Get google JWKset");
 
-    let state = AppState {
-        db: get_db().await.expect("Get SurrealDb conn"),
-    };
+    let db = get_db().await.expect("Get SurrealDb conn");
+
+    let state = DbState::new(db);
 
     let api_state = ApiState {
         google_keys: Arc::new(RwLock::new(jwkset)),
@@ -59,7 +59,7 @@ async fn get_db() -> Result<Db> {
 
     let db = any::connect(db_adrr).await?;
 
-    db.use_ns("pp").use_db("core").await?;
+    db.use_ns("pp").await?;
 
     let password = &std::env::var("SURREAL_DB_PASS")?;
     let username = &std::env::var("SURREAL_DB_USER")?;
@@ -69,8 +69,12 @@ async fn get_db() -> Result<Db> {
     Ok(db)
 }
 
-pub fn router(state: AppState, api_state: ApiState) -> Router {
+pub fn router(state: DbState, api_state: ApiState) -> Router {
     lib::router(state)
+        .layer(axum::middleware::from_fn_with_state(
+            api_state.clone(),
+            api::auth,
+        ))
         .nest("/api", api::router(api_state))
         .fallback_service(ServeDir::new("public"))
 }

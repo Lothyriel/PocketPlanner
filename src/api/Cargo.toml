@@ -8,7 +8,6 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.96"
 axum = { version = "0.8.4", features = ["macros"] }
-axum-extra = { version = "0.10.1", features = ["cookie"] }
 tower-http = { version = "0.6.2", features = ["fs", "trace"] }
 chrono = { version = "0.4.39", features = ["serde"] }
 jsonwebtoken = "9.3.1"

@@ -4,12 +4,13 @@ use axum::{
     response::{IntoResponse, Response},
     Router,
 };
-use surrealdb::{engine::any::Any, Surreal};
+use infra::DbState;
 
 mod fragments;
+pub mod infra;
 mod views;
 
-pub fn router(state: AppState) -> Router {
+pub fn router(state: DbState) -> Router {
     views::router(state.clone()).nest("/fragments", fragments::router(state))
 }
 
@@ -36,11 +37,4 @@ impl From<anyhow::Error> for AppError {
     fn from(err: anyhow::Error) -> Self {
         Self(err)
     }
-}
-
-pub type Db = Surreal<Any>;
-
-#[derive(Clone)]
-pub struct AppState {
-    pub db: Db,
 }

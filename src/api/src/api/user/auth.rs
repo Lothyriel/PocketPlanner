@@ -1,13 +1,13 @@
 use axum::{
     extract::{Request, State},
-    http::{header, StatusCode},
+    http::StatusCode,
     middleware::Next,
     response::IntoResponse,
     Json,
 };
-use axum_extra::extract::cookie::CookieJar;
 use jsonwebtoken::{self as jwt};
 use jwt::{errors::Error, jwk::Jwk, TokenData};
+use lib::infra::UserClaims;
 use reqwest::Client;
 use serde_json::json;
 
@@ -15,11 +15,10 @@ use crate::{application::ApiState, ResponseResult};
 
 pub async fn auth(
     State(state): State<ApiState>,
-    cookie_jar: CookieJar,
     mut req: Request,
     next: Next,
 ) -> Result<impl IntoResponse, AuthError> {
-    insert_claims(state, cookie_jar, &mut req).await?;
+    insert_claims(state, &mut req).await?;
 
     Ok(next.run(req).await)
 }
@@ -55,16 +54,13 @@ pub async fn refresh(Json(params): Json<Params>) -> ResponseResult<()> {
     Ok(Json(()))
 }
 
-async fn insert_claims(
-    state: ApiState,
-    cookie_jar: CookieJar,
-    req: &mut Request,
-) -> Result<(), AuthError> {
-    let token = cookie_jar
-        .get("token")
-        .map(|cookie| cookie.value())
-        .or_else(|| get_token_from_headers(req))
-        .ok_or(AuthError::TokenNotPresent)?;
+async fn insert_claims(state: ApiState, req: &mut Request) -> Result<(), AuthError> {
+    let cookie = req
+        .headers()
+        .get(axum::http::header::COOKIE)
+        .ok_or_else(|| AuthError::TokenNotPresent)?;
+
+    let token = cookie.to_str().map_err(|_| AuthError::TokenNotPresent)?;
 
     let header = jwt::decode_header(token)?;
 
@@ -97,13 +93,6 @@ async fn get_token_data(
     };
 
     Ok(decode_token_data(token, jwk)?)
-}
-
-fn get_token_from_headers(req: &Request) -> Option<&str> {
-    req.headers()
-        .get(header::AUTHORIZATION)
-        .and_then(|header| header.to_str().ok())
-        .and_then(|value| value.starts_with("Bearer ").then(|| &value[7..]))
 }
 
 fn decode_token_data(token: &str, jwk: &Jwk) -> Result<TokenData<UserClaims>, Error> {
@@ -143,11 +132,4 @@ impl IntoResponse for AuthError {
 
         (StatusCode::UNAUTHORIZED, body).into_response()
     }
-}
-
-#[derive(serde::Deserialize, serde::Serialize, Clone)]
-pub struct UserClaims {
-    pub email: String,
-    pub name: String,
-    pub picture: String,
 }

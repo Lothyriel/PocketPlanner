@@ -1,28 +1,38 @@
 use anyhow::Result;
 use askama_web::WebTemplate;
 
-use axum::{extract::State, response::IntoResponse, routing, Form, Router};
+use axum::{extract::State, response::IntoResponse, routing, Extension, Form, Router};
 
-use crate::{AppError, AppState, Db};
+use crate::{
+    infra::{Db, DbState, UserClaims},
+    AppError,
+};
 
-pub fn router(state: AppState) -> Router {
+pub fn router(state: DbState) -> Router {
     Router::new()
         .route("/", routing::get(view))
         .route("/add", routing::post(action))
         .with_state(state)
 }
 
-pub async fn view(State(state): State<AppState>) -> Result<View, AppError> {
-    let transactions = get_transactions(&state.db).await?;
+pub async fn view(
+    State(state): State<DbState>,
+    Extension(claims): Extension<UserClaims>,
+) -> Result<View, AppError> {
+    let db = state.db(&claims.email).await?;
+    let transactions = get_transactions(db).await?;
 
     Ok(View { transactions })
 }
 
 async fn action(
-    State(state): State<AppState>,
+    State(state): State<DbState>,
+    Extension(claims): Extension<UserClaims>,
     Form(tx): Form<Transaction>,
 ) -> Result<impl IntoResponse, AppError> {
-    add_transaction(&state.db, &tx).await?;
+    let db = state.db(&claims.email).await?;
+
+    add_transaction(db, &tx).await?;
 
     Ok(Action { tx })
 }

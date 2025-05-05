@@ -1,12 +1,11 @@
 use axum::{routing, Extension, Json, Router};
-
-use auth::UserClaims;
+use lib::infra::UserClaims;
 
 use crate::application::ApiState;
 
 mod auth;
 
-pub use auth::get_google_jwks;
+pub use auth::{auth, get_google_jwks};
 
 pub fn router(state: ApiState) -> Router {
     Router::new()

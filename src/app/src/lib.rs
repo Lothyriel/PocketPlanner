@@ -3,9 +3,10 @@ use std::collections::HashMap;
 use axum::{
     body::Body,
     http::{response::Parts, HeaderMap, HeaderValue, Method, Request as AxumRequest},
+    Extension,
 };
 use http_body_util::BodyExt;
-use lib::{AppState, Db};
+use lib::infra::{Db, DbState, UserClaims};
 use surrealdb::engine::any;
 use tower::ServiceExt;
 use wasm_bindgen::{prelude::wasm_bindgen, JsError, JsValue};
@@ -19,7 +20,10 @@ pub async fn render(req: JsValue) -> JsResult<Response> {
 
     let db = get_db().await?;
 
-    let res = lib::router(AppState { db }).oneshot(req).await?;
+    let res = lib::router(DbState::new(db))
+        .layer(auth())
+        .oneshot(req)
+        .await?;
 
     let (parts, body) = res.into_parts();
 
@@ -30,10 +34,22 @@ pub async fn render(req: JsValue) -> JsResult<Response> {
     Response::new_with_opt_u8_array_and_init(Some(body.as_mut()), &options?).map_err(to_err)
 }
 
+fn auth() -> Extension<UserClaims> {
+    let local = "local".to_string();
+
+    let local_claims = UserClaims {
+        name: local.clone(),
+        email: local.clone(),
+        picture: local,
+    };
+
+    Extension(local_claims)
+}
+
 async fn get_db() -> JsResult<Db> {
     let db = any::connect("indxdb://pp_db").await?;
 
-    db.use_ns("pp").use_db("local").await?;
+    db.use_ns("pp").await?;
 
     Ok(db)
 }
