@@ -70,11 +70,10 @@ async fn get_db() -> Result<Db> {
 }
 
 pub fn router(state: DbState, api_state: ApiState) -> Router {
+    let auth_layer = axum::middleware::from_fn_with_state(api_state.clone(), api::auth);
+
     lib::router(state)
-        .layer(axum::middleware::from_fn_with_state(
-            api_state.clone(),
-            api::auth,
-        ))
+        .layer(auth_layer)
         .nest("/api", api::router(api_state))
         .fallback_service(ServeDir::new("public"))
 }
@@ -85,15 +84,12 @@ type ResponseResult<T> = Result<Json<T>, ResponseError>;
 pub enum ResponseError {
     #[error("HttpError: {0}")]
     Http(#[from] reqwest::Error),
-    #[error("EnvError: {0}")]
-    Environment(#[from] std::env::VarError),
 }
 
 impl IntoResponse for ResponseError {
     fn into_response(self) -> axum::response::Response {
         let code = match self {
             ResponseError::Http(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            ResponseError::Environment(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
         (code, Json(json!({"error": self.to_string() }))).into_response()

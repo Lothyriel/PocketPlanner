@@ -32,7 +32,7 @@ pub struct Params {
 pub async fn refresh(Json(params): Json<Params>) -> ResponseResult<()> {
     let client = Client::new();
 
-    let secret = std::env::var("G_CLIENT_SECRET")?;
+    let secret = std::env::var("G_CLIENT_SECRET").expect("G_CLIENT_SECRET");
 
     let body = json! ({
         "client_id": params.client_id,

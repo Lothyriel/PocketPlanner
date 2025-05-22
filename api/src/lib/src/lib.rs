@@ -1,6 +1,7 @@
 use anyhow::Error;
 use askama_web::WebTemplate;
 use axum::{
+    extract::{rejection::JsonRejection, FromRequest},
     response::{IntoResponse, Response},
     Router,
 };
@@ -36,5 +37,21 @@ impl IntoResponse for AppError {
 impl From<anyhow::Error> for AppError {
     fn from(err: anyhow::Error) -> Self {
         Self(err)
+    }
+}
+
+impl From<JsonRejection> for AppError {
+    fn from(rejection: JsonRejection) -> Self {
+        error(rejection)
+    }
+}
+
+#[derive(FromRequest)]
+#[from_request(via(axum::Json), rejection(AppError))]
+pub struct Json<T>(T);
+
+impl<T: serde::Serialize> IntoResponse for Json<T> {
+    fn into_response(self) -> axum::response::Response {
+        axum::Json(self.0).into_response()
     }
 }
