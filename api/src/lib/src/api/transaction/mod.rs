@@ -1,7 +1,7 @@
-use axum::{extract::State, routing, Extension, Form, Router};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, routing, Extension, Router};
 
 use crate::{
-    infra::{Db, DbState, UserClaims},
+    infra::{transaction::Transaction, Db, DbState, UserClaims},
     AppResult, Json, Response,
 };
 
@@ -29,9 +29,9 @@ async fn create(
 ) -> AppResult<impl IntoResponse> {
     let db = state.db(&claims.email).await?;
 
-    add_transaction(db, &tx).await?;
+    let tx = add_transaction(db, tx).await?;
 
-    Ok(())
+    Ok((StatusCode::CREATED, Json(tx)))
 }
 
 async fn get_transactions(db: &Db) -> AppResult<Vec<Transaction>> {
@@ -43,13 +43,15 @@ async fn get_transactions(db: &Db) -> AppResult<Vec<Transaction>> {
     Ok(transactions)
 }
 
-async fn add_transaction(conn: &Db, transaction: &Transaction) -> AppResult<()> {
-    conn.query("INSERT INTO transactions (amount, description) VALUES ($amount, $description)")
-        .bind(("amount", transaction.amount))
-        .bind(("description", transaction.description.clone()))
-        .await?;
+async fn add_transaction(conn: &Db, tx: CreateTransaction) -> AppResult<Transaction> {
+    let result: Option<Transaction> = conn
+        .query("INSERT INTO transactions (amount, description) VALUES ($amount, $description)")
+        .bind(("amount", tx.amount))
+        .bind(("description", tx.description))
+        .await?
+        .take(0)?;
 
-    Ok(())
+    Ok(result.expect("Expected to add"))
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]
