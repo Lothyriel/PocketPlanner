@@ -54,8 +54,8 @@ async fn add_transaction(conn: &Db, tx: CreateTransaction) -> AppResult<Transact
     Ok(result.expect("Expected to add"))
 }
 
-#[derive(serde::Deserialize, serde::Serialize)]
-pub struct Transaction {
+#[derive(serde::Deserialize)]
+pub struct CreateTransaction {
     pub amount: u64,
     pub description: String,
 }

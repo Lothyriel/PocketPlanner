@@ -1,3 +1,5 @@
+pub mod transaction;
+
 use surrealdb::{engine::any::Any, Surreal};
 
 use crate::AppResult;
