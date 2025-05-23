@@ -1,5 +1,6 @@
-use anyhow::Result;
 use surrealdb::{engine::any::Any, Surreal};
+
+use crate::AppResult;
 
 pub type Db = Surreal<Any>;
 
@@ -13,7 +14,7 @@ impl DbState {
         Self { db }
     }
 
-    pub async fn db(&self, user_id: &str) -> Result<&Db> {
+    pub async fn db(&self, user_id: &str) -> AppResult<&Db> {
         self.db.use_db(user_id).await?;
         Ok(&self.db)
     }

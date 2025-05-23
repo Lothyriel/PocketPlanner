@@ -4,9 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = { version = "0.8.4", default-features = false, features = ["form", "macros"] }
-anyhow = "1.0.96"
-askama = { version = "0.14.0" }
-askama_web = { version = "0.14.0", features = ["axum-0.8"] }
+axum = { version = "0.8.4", default-features = false, features = ["form", "macros", "json"] }
 serde = { version = "1.0.218", features = ["derive"] }
-surrealdb = "2.3.0"
+surrealdb = { version = "2.3.0", default-features = false }
+thiserror = "2.0.12"
+serde_json = "1.0.140"

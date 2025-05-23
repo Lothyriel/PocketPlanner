@@ -1,57 +1,54 @@
-use anyhow::Error;
-use askama_web::WebTemplate;
 use axum::{
     extract::{rejection::JsonRejection, FromRequest},
-    response::{IntoResponse, Response},
+    http::StatusCode,
+    response::IntoResponse,
     Router,
 };
-use infra::DbState;
 
-mod fragments;
+mod api;
 pub mod infra;
-mod views;
+
+use infra::DbState;
+use serde_json::json;
 
 pub fn router(state: DbState) -> Router {
-    views::router(state.clone()).nest("/fragments", fragments::router(state))
-}
-
-fn error(error: Error) -> ErrorTemplate {
-    ErrorTemplate { error }
-}
-
-#[derive(askama::Template, WebTemplate)]
-#[template(path = "error.html")]
-pub struct ErrorTemplate {
-    error: Error,
-}
-
-#[derive(Debug)]
-pub struct AppError(anyhow::Error);
-
-impl IntoResponse for AppError {
-    fn into_response(self) -> Response {
-        error(self.0).into_response()
-    }
-}
-
-impl From<anyhow::Error> for AppError {
-    fn from(err: anyhow::Error) -> Self {
-        Self(err)
-    }
+    Router::new().nest("/api", api::router(state))
 }
 
 impl From<JsonRejection> for AppError {
     fn from(rejection: JsonRejection) -> Self {
-        error(rejection)
+        AppError::Validation(rejection.body_text())
     }
 }
 
 #[derive(FromRequest)]
 #[from_request(via(axum::Json), rejection(AppError))]
-pub struct Json<T>(T);
+pub struct Json<T>(pub T);
 
 impl<T: serde::Serialize> IntoResponse for Json<T> {
     fn into_response(self) -> axum::response::Response {
         axum::Json(self.0).into_response()
+    }
+}
+
+pub type Response<T> = Result<Json<T>, AppError>;
+pub type AppResult<T> = Result<T, AppError>;
+
+#[derive(thiserror::Error, Debug)]
+pub enum AppError {
+    #[error("{0}")]
+    Validation(String),
+    #[error("{0}")]
+    Database(#[from] surrealdb::Error),
+}
+
+impl IntoResponse for AppError {
+    fn into_response(self) -> axum::response::Response {
+        let code = match self {
+            Self::Database(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::Validation(_) => StatusCode::BAD_REQUEST,
+        };
+
+        (code, Json(json!({"error": self.to_string() }))).into_response()
     }
 }

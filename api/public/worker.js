@@ -7,10 +7,8 @@ const CACHED_ASSETS = [
   "icon-512.png",
   "favicon.ico",
   "manifest.json",
-  "worker.js",
   "app.js",
   "app_bg.wasm",
-  "https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js",
 ]
 
 self.addEventListener("install", event => {

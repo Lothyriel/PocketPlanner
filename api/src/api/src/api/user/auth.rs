@@ -3,15 +3,14 @@ use axum::{
     http::StatusCode,
     middleware::Next,
     response::IntoResponse,
-    Json,
 };
 use jsonwebtoken::{self as jwt};
 use jwt::{errors::Error, jwk::Jwk, TokenData};
-use lib::infra::UserClaims;
+use lib::{infra::UserClaims, Json};
 use reqwest::Client;
 use serde_json::json;
 
-use crate::{application::ApiState, ResponseResult};
+use crate::application::ApiState;
 
 pub async fn auth(
     State(state): State<ApiState>,
@@ -29,7 +28,7 @@ pub struct Params {
     client_id: String,
 }
 
-pub async fn refresh(Json(params): Json<Params>) -> ResponseResult<()> {
+pub async fn refresh(Json(params): Json<Params>) -> String {
     let client = Client::new();
 
     let secret = std::env::var("G_CLIENT_SECRET").expect("G_CLIENT_SECRET");
@@ -45,13 +44,15 @@ pub async fn refresh(Json(params): Json<Params>) -> ResponseResult<()> {
         .post("https://oauth2.googleapis.com/token")
         .json(&body)
         .send()
-        .await?;
+        .await
+        .expect("Google is down");
 
-    println!("{}", response.text().await?);
+    // todo: there expects are ugly
+    let body = response.text().await.expect("Should have text");
 
-    //let body = response.json().await?;
+    tracing::warn!("Google refresh token: {}", body);
 
-    Ok(Json(()))
+    body
 }
 
 async fn insert_claims(state: ApiState, req: &mut Request) -> Result<(), AuthError> {

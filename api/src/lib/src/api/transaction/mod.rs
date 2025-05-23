@@ -1,43 +1,40 @@
-use anyhow::Result;
-use askama_web::WebTemplate;
-
-use axum::{extract::State, response::IntoResponse, routing, Extension, Form, Router};
+use axum::{extract::State, routing, Extension, Form, Router};
 
 use crate::{
     infra::{Db, DbState, UserClaims},
-    AppError,
+    AppResult, Json, Response,
 };
 
 pub fn router(state: DbState) -> Router {
     Router::new()
-        .route("/", routing::get(view))
-        .route("/add", routing::post(action))
+        .route("/", routing::get(get))
+        .route("/add", routing::post(create))
         .with_state(state)
 }
 
-pub async fn view(
+pub async fn get(
     State(state): State<DbState>,
     Extension(claims): Extension<UserClaims>,
-) -> Result<View, AppError> {
+) -> Response<Vec<Transaction>> {
     let db = state.db(&claims.email).await?;
     let transactions = get_transactions(db).await?;
 
-    Ok(View { transactions })
+    Ok(Json(transactions))
 }
 
-async fn action(
+async fn create(
     State(state): State<DbState>,
     Extension(claims): Extension<UserClaims>,
     Form(tx): Form<Transaction>,
-) -> Result<impl IntoResponse, AppError> {
+) -> AppResult<()> {
     let db = state.db(&claims.email).await?;
 
     add_transaction(db, &tx).await?;
 
-    Ok(Action { tx })
+    Ok(())
 }
 
-async fn get_transactions(db: &Db) -> Result<Vec<Transaction>> {
+async fn get_transactions(db: &Db) -> AppResult<Vec<Transaction>> {
     let transactions = db
         .query("SELECT amount, description FROM transactions")
         .await?
@@ -46,7 +43,7 @@ async fn get_transactions(db: &Db) -> Result<Vec<Transaction>> {
     Ok(transactions)
 }
 
-async fn add_transaction(conn: &Db, transaction: &Transaction) -> Result<()> {
+async fn add_transaction(conn: &Db, transaction: &Transaction) -> AppResult<()> {
     conn.query("INSERT INTO transactions (amount, description) VALUES ($amount, $description)")
         .bind(("amount", transaction.amount))
         .bind(("description", transaction.description.clone()))
@@ -55,20 +52,8 @@ async fn add_transaction(conn: &Db, transaction: &Transaction) -> Result<()> {
     Ok(())
 }
 
-#[derive(serde::Deserialize)]
-struct Transaction {
+#[derive(serde::Deserialize, serde::Serialize)]
+pub struct Transaction {
     pub amount: u64,
     pub description: String,
-}
-
-#[derive(askama::Template, WebTemplate)]
-#[template(path = "transaction/view.html")]
-pub struct View {
-    transactions: Vec<Transaction>,
-}
-
-#[derive(askama::Template, WebTemplate)]
-#[template(path = "transaction/action.html")]
-struct Action {
-    tx: Transaction,
 }

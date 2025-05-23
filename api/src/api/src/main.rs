@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use anyhow::Result;
 use application::ApiState;
-use axum::{response::IntoResponse, Json, Router};
-use lib::infra::{Db, DbState};
-use reqwest::StatusCode;
-use serde_json::json;
+use axum::Router;
+use lib::{
+    infra::{Db, DbState},
+    AppResult,
+};
 use surrealdb::{engine::any, opt::auth::Root};
 use tokio::sync::RwLock;
 use tower_http::services::ServeDir;
@@ -20,7 +20,7 @@ async fn main() {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or("debug,hyper=off".into()),
+                .unwrap_or("debug,hyper=warn,rustls=warn,tungstenite=warn".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -54,15 +54,21 @@ async fn main() {
     }
 }
 
-async fn get_db() -> Result<Db> {
-    let db_adrr = std::env::var("SURREAL_DB_ADDR")?;
+macro_rules! expect_env {
+    ($var_name:expr) => {
+        std::env::var($var_name).expect(concat!("env missing: ", $var_name))
+    };
+}
+
+async fn get_db() -> AppResult<Db> {
+    let db_adrr = expect_env!("SURREAL_DB_ADDR");
 
     let db = any::connect(db_adrr).await?;
 
     db.use_ns("pp").await?;
 
-    let password = &std::env::var("SURREAL_DB_PASS")?;
-    let username = &std::env::var("SURREAL_DB_USER")?;
+    let password = &expect_env!("SURREAL_DB_PASS");
+    let username = &expect_env!("SURREAL_DB_USER");
 
     db.signin(Root { username, password }).await?;
 
@@ -74,24 +80,6 @@ pub fn router(state: DbState, api_state: ApiState) -> Router {
 
     lib::router(state)
         .layer(auth_layer)
-        .nest("/api", api::router(api_state))
+        .merge(api::router(api_state))
         .fallback_service(ServeDir::new("public"))
-}
-
-type ResponseResult<T> = Result<Json<T>, ResponseError>;
-
-#[derive(thiserror::Error, Debug)]
-pub enum ResponseError {
-    #[error("HttpError: {0}")]
-    Http(#[from] reqwest::Error),
-}
-
-impl IntoResponse for ResponseError {
-    fn into_response(self) -> axum::response::Response {
-        let code = match self {
-            ResponseError::Http(_) => StatusCode::INTERNAL_SERVER_ERROR,
-        };
-
-        (code, Json(json!({"error": self.to_string() }))).into_response()
-    }
 }
