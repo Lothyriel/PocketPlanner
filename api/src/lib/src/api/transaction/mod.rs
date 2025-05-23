@@ -8,7 +8,7 @@ use crate::{
 pub fn router(state: DbState) -> Router {
     Router::new()
         .route("/", routing::get(get))
-        .route("/add", routing::post(create))
+        .route("/", routing::post(create))
         .with_state(state)
 }
 
