@@ -25,8 +25,8 @@ pub async fn get(
 async fn create(
     State(state): State<DbState>,
     Extension(claims): Extension<UserClaims>,
-    Form(tx): Form<Transaction>,
-) -> AppResult<()> {
+    Json(tx): Json<CreateTransaction>,
+) -> AppResult<impl IntoResponse> {
     let db = state.db(&claims.email).await?;
 
     add_transaction(db, &tx).await?;
