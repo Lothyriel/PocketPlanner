@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@mateothegreat/svelte5-router':
+        specifier: ^2.16.8
+        version: 2.16.8(svelte@5.38.0)
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
         specifier: ^6.1.0
@@ -201,6 +205,11 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.29':
     resolution: {integrity: sha512-uw6guiW/gcAGPDhLmd77/6lW8QLeiV5RUTsAX46Db6oLhGaVj4lhnPwb184s1bkc8kdVg/+h988dro8GRDpmYQ==}
+
+  '@mateothegreat/svelte5-router@2.16.8':
+    resolution: {integrity: sha512-/3/QDMGzG9V6BCdn1ngOzpAn7aYymzKaEBvlwLW39tqrXTIVETw47xBy1M+Ftr38g7biUGjBOhnuRpAkvfPdmg==}
+    peerDependencies:
+      svelte: ^5.0.0
 
   '@rollup/rollup-android-arm-eabi@4.46.2':
     resolution: {integrity: sha512-Zj3Hl6sN34xJtMv7Anwb5Gu01yujyE/cLBDB2gnHTAHaWS1Z38L7kuSG+oAh0giZMqG060f/YBStXtMH6FvPMA==}
@@ -609,6 +618,10 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.4
+
+  '@mateothegreat/svelte5-router@2.16.8(svelte@5.38.0)':
+    dependencies:
+      svelte: 5.38.0
 
   '@rollup/rollup-android-arm-eabi@4.46.2':
     optional: true
