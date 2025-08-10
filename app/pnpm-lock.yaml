@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@lucide/svelte':
+        specifier: ^0.539.0
+        version: 0.539.0(svelte@5.38.0)
       '@mateothegreat/svelte5-router':
         specifier: ^2.16.8
         version: 2.16.8(svelte@5.38.0)
@@ -230,6 +233,11 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.29':
     resolution: {integrity: sha512-uw6guiW/gcAGPDhLmd77/6lW8QLeiV5RUTsAX46Db6oLhGaVj4lhnPwb184s1bkc8kdVg/+h988dro8GRDpmYQ==}
+
+  '@lucide/svelte@0.539.0':
+    resolution: {integrity: sha512-OWhw4BhHO+owmOE/ijSNLnw/flbW2/DsLzMHAeM8oEjLsO0xE6glX0ADCDwxKItTs5ZJYssfyGNXxMXrea173w==}
+    peerDependencies:
+      svelte: ^5
 
   '@mateothegreat/svelte5-router@2.16.8':
     resolution: {integrity: sha512-/3/QDMGzG9V6BCdn1ngOzpAn7aYymzKaEBvlwLW39tqrXTIVETw47xBy1M+Ftr38g7biUGjBOhnuRpAkvfPdmg==}
@@ -873,6 +881,10 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.4
+
+  '@lucide/svelte@0.539.0(svelte@5.38.0)':
+    dependencies:
+      svelte: 5.38.0
 
   '@mateothegreat/svelte5-router@2.16.8(svelte@5.38.0)':
     dependencies:
