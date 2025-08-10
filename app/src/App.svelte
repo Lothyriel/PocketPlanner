@@ -5,6 +5,8 @@
 </script>
 
 <main>
-  <Counter></Counter>
-  <LoginForm></LoginForm>
+  <Counter />
+  <div class="flex h-screen w-full items-center justify-center px-4">
+    <LoginForm />
+  </div>
 </main>
