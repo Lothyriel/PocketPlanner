@@ -7,22 +7,31 @@ edition = "2021"
 
 [dependencies]
 axum = { version = "0.8.4", features = ["macros"] }
-tower-http = { version = "0.6.2", features = ["fs", "trace"] }
-chrono = { version = "0.4.39", features = ["serde"] }
+tower-http = { version = "0.6.6", features = ["fs", "trace"] }
+
+chrono = { version = "0.4.41", features = ["serde"] }
 jsonwebtoken = "9.3.1"
-tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
-lopdf = { version = "0.36.0" }
-reqwest = { version = "0.12.9", features = [
+
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+
+lopdf = { version = "0.37.0" }
+
+reqwest = { version = "0.12.23", features = [
   "json",
   "rustls-tls",
 ], default-features = false }
-rust_decimal = "1.36.0"
-rust_decimal_macros = "1.36.0"
-serde = { version = "1.0.218", features = ["derive"] }
-serde_json = "1.0.133"
-thiserror = "2.0.6"
-tokio = { version = "1.42.0", features = ["full"] }
-surrealdb = { version = "2.3.0", default-features = true }
+
+rust_decimal = "1.37.2"
+rust_decimal_macros = "1.37.1"
+
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.143"
+
+thiserror = "2.0.15"
+
+tokio = { version = "1.47.1", features = ["full"] }
+
 dotenvy = "0.15.7"
+
 lib = { path = "../lib" }

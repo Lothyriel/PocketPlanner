@@ -6,8 +6,7 @@ use axum::{
     Extension,
 };
 use http_body_util::BodyExt;
-use lib::infra::{Db, DbState, UserClaims};
-use surrealdb::engine::any;
+use lib::infra::{DbState, UserClaims};
 use tower::ServiceExt;
 use wasm_bindgen::{prelude::wasm_bindgen, JsError, JsValue};
 use web_sys::{Response, ResponseInit};
@@ -18,9 +17,7 @@ pub async fn render(req: JsValue) -> JsResult<Response> {
 
     let req = build_request(req).await?;
 
-    let db = get_db().await?;
-
-    let res = lib::router(DbState::new(db))
+    let res = lib::router(DbState::new())
         .layer(auth())
         .oneshot(req)
         .await?;
@@ -44,14 +41,6 @@ fn auth() -> Extension<UserClaims> {
     };
 
     Extension(local_claims)
-}
-
-async fn get_db() -> JsResult<Db> {
-    let db = any::connect("indxdb://pp_db").await?;
-
-    db.use_ns("pp").await?;
-
-    Ok(db)
 }
 
 #[derive(serde::Deserialize, Debug)]

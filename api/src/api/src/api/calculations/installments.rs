@@ -7,10 +7,9 @@ pub struct Params {
     financed: Decimal,
     installments: u16,
     upfront: Decimal,
+    cdi: Decimal,
+    tax: Decimal,
 }
-
-// use api and cache it for X hours
-const CDI: Decimal = dec!(12.35);
 
 #[derive(serde::Serialize)]
 pub struct InstallmentsModel {
@@ -22,7 +21,7 @@ pub async fn handler(Query(params): Query<Params>) -> Json<InstallmentsModel> {
     let discount = params.financed - params.upfront;
     let installment_value = params.financed / Decimal::from(params.installments);
 
-    let monthly_rate = CDI / dec!(12) / dec!(100);
+    let monthly_rate = (params.cdi * (dec!(1) - params.tax)) / dec!(12) / dec!(100);
 
     let earnings = (0..params.installments)
         .fold((Decimal::ZERO, params.financed), |(e, r), _| {

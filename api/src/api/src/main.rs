@@ -2,11 +2,7 @@ use std::sync::Arc;
 
 use application::ApiState;
 use axum::Router;
-use lib::{
-    infra::{Db, DbState},
-    AppResult,
-};
-use surrealdb::{engine::any, opt::auth::Root};
+use lib::infra::DbState;
 use tokio::sync::RwLock;
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -31,9 +27,7 @@ async fn main() {
 
     let jwkset = api::get_google_jwks().await.expect("Get google JWKset");
 
-    let db = get_db().await.expect("Get SurrealDb conn");
-
-    let state = DbState::new(db);
+    let state = DbState::new();
 
     let api_state = ApiState {
         google_keys: Arc::new(RwLock::new(jwkset)),
@@ -54,25 +48,11 @@ async fn main() {
     }
 }
 
+#[allow(unused_macros)]
 macro_rules! expect_env {
     ($var_name:expr) => {
         std::env::var($var_name).expect(concat!("env missing: ", $var_name))
     };
-}
-
-async fn get_db() -> AppResult<Db> {
-    let db_adrr = expect_env!("SURREAL_DB_ADDR");
-
-    let db = any::connect(db_adrr).await?;
-
-    db.use_ns("pp").await?;
-
-    let password = &expect_env!("SURREAL_DB_PASS");
-    let username = &expect_env!("SURREAL_DB_USER");
-
-    db.signin(Root { username, password }).await?;
-
-    Ok(db)
 }
 
 pub fn router(state: DbState, api_state: ApiState) -> Router {

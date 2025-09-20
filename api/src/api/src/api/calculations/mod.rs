@@ -10,3 +10,6 @@ pub fn router() -> Router {
         .route("/installments", routing::get(installments::handler))
         .route("/savings", routing::get(savings::handler))
 }
+
+pub const SELIC: f64 = 15.0;
+pub const CDI: f64 = SELIC - 0.1;

@@ -1,7 +1,7 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, routing, Extension, Router};
 
 use crate::{
-    infra::{transaction::Transaction, Db, DbState, UserClaims},
+    infra::{transaction::Transaction, DbState, UserClaims},
     AppResult, Json, Response,
 };
 
@@ -13,48 +13,33 @@ pub fn router(state: DbState) -> Router {
 }
 
 pub async fn get(
-    State(state): State<DbState>,
-    Extension(claims): Extension<UserClaims>,
+    State(_state): State<DbState>,
+    Extension(_claims): Extension<UserClaims>,
 ) -> Response<Vec<Transaction>> {
-    let db = state.db(&claims.email).await?;
-    let transactions = get_transactions(db).await?;
+    let transactions = get_transactions().await?;
 
     Ok(Json(transactions))
 }
 
 async fn create(
-    State(state): State<DbState>,
-    Extension(claims): Extension<UserClaims>,
+    State(_state): State<DbState>,
+    Extension(_claims): Extension<UserClaims>,
     Json(tx): Json<CreateTransaction>,
 ) -> AppResult<impl IntoResponse> {
-    let db = state.db(&claims.email).await?;
-
-    let tx = add_transaction(db, tx).await?;
+    let tx = add_transaction(tx).await?;
 
     Ok((StatusCode::CREATED, Json(tx)))
 }
 
-async fn get_transactions(db: &Db) -> AppResult<Vec<Transaction>> {
-    let transactions = db
-        .query("SELECT amount, description FROM transactions")
-        .await?
-        .take(0)?;
-
-    Ok(transactions)
+async fn get_transactions() -> AppResult<Vec<Transaction>> {
+    todo!("SELECT amount, description FROM transactions")
 }
 
-async fn add_transaction(conn: &Db, tx: CreateTransaction) -> AppResult<Transaction> {
-    let result: Option<Transaction> = conn
-        .query("INSERT INTO transactions (amount, description) VALUES ($amount, $description)")
-        .bind(("amount", tx.amount))
-        .bind(("description", tx.description))
-        .await?
-        .take(0)?;
-
-    Ok(result.expect("Expected to add"))
+async fn add_transaction(_tx: CreateTransaction) -> AppResult<Transaction> {
+    todo!("INSERT INTO transactions (amount, description) VALUES ($amount, $description)")
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, serde::Serialize)]
 pub struct CreateTransaction {
     pub amount: u64,
     pub description: String,

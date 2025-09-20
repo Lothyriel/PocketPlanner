@@ -2,6 +2,8 @@ use axum::{extract::Query, Json};
 use rust_decimal::{prelude::FromPrimitive, Decimal};
 use rust_decimal_macros::dec;
 
+use super::{CDI, SELIC};
+
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct Params {
     pub initial: Decimal,
@@ -30,8 +32,6 @@ struct SavingSimulation {
     savings: Decimal,
 }
 
-const SELIC: f64 = 12.25;
-const CDI: f64 = SELIC - 0.1;
 const TREASURY_2027: f64 = SELIC + 0.1736;
 const SAVINGS_RATE: f64 = if SELIC > 8.5 {
     0.5
@@ -39,13 +39,10 @@ const SAVINGS_RATE: f64 = if SELIC > 8.5 {
     SELIC * 70. / 100. / 12.
 };
 
-pub async fn handler(params: Query<Params>) -> Json<SavingsModel> {
-    let revenue = get_revenue(&params.0);
+pub async fn handler(Query(params): Query<Params>) -> Json<SavingsModel> {
+    let revenue = get_revenue(&params);
 
-    Json(SavingsModel {
-        params: params.0,
-        revenue,
-    })
+    Json(SavingsModel { params, revenue })
 }
 
 pub fn get_revenue(params: &Params) -> Revenue {

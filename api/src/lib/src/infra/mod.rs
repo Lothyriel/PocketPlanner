@@ -1,24 +1,11 @@
 pub mod transaction;
 
-use surrealdb::{engine::any::Any, Surreal};
-
-use crate::AppResult;
-
-pub type Db = Surreal<Any>;
-
 #[derive(Clone)]
-pub struct DbState {
-    db: Db,
-}
+pub struct DbState {}
 
 impl DbState {
-    pub fn new(db: Db) -> Self {
-        Self { db }
-    }
-
-    pub async fn db(&self, user_id: &str) -> AppResult<&Db> {
-        self.db.use_db(user_id).await?;
-        Ok(&self.db)
+    pub fn new() -> Self {
+        Self {}
     }
 }
 

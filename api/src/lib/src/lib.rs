@@ -7,6 +7,7 @@ use axum::{
 
 mod api;
 pub mod infra;
+mod util;
 
 use infra::DbState;
 use serde_json::json;
@@ -38,14 +39,14 @@ pub type AppResult<T> = Result<T, AppError>;
 pub enum AppError {
     #[error("{0}")]
     Validation(String),
-    #[error("{0}")]
-    Database(#[from] surrealdb::Error),
+    #[error("")]
+    Database,
 }
 
 impl IntoResponse for AppError {
     fn into_response(self) -> axum::response::Response {
         let code = match self {
-            Self::Database(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::Database => StatusCode::INTERNAL_SERVER_ERROR,
             Self::Validation(_) => StatusCode::BAD_REQUEST,
         };
 
