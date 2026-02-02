@@ -1,36 +1,36 @@
 [package]
 name = "api"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = { version = "0.8.4", features = ["macros"] }
-tower-http = { version = "0.6.6", features = ["fs", "trace"] }
+axum = { version = "0.8.8", features = ["macros"] }
+tower-http = { version = "0.6.8", features = ["fs", "trace"] }
 
-chrono = { version = "0.4.41", features = ["serde"] }
-jsonwebtoken = "9.3.1"
+chrono = { version = "0.4.43", features = ["serde"] }
+jsonwebtoken = { version = "10.3.0", features = ["rust_crypto"] }
 
-tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
 
-lopdf = { version = "0.37.0" }
+lopdf = { version = "0.39.0" }
 
-reqwest = { version = "0.12.23", features = [
+reqwest = { version = "0.13.1", features = [
   "json",
-  "rustls-tls",
+  "rustls",
 ], default-features = false }
 
-rust_decimal = "1.37.2"
-rust_decimal_macros = "1.37.1"
+rust_decimal = "1.40.0"
+rust_decimal_macros = "1.40.0"
 
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.143"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
 
-thiserror = "2.0.15"
+thiserror = "2.0.18"
 
-tokio = { version = "1.47.1", features = ["full"] }
+tokio = { version = "1.49.0", features = ["full"] }
 
 dotenvy = "0.15.7"
 
