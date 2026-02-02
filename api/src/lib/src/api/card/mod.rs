@@ -62,7 +62,7 @@ async fn get(
     let card = state
         .conn
         .call(move |conn| {
-            Ok(conn.query_row(
+            conn.query_row(
                 "SELECT id, user_email, name, card_type, credit_limit, current_balance
                  FROM cards WHERE id = ?1 AND user_email = ?2",
                 [&id, &email],
@@ -76,7 +76,7 @@ async fn get(
                         current_balance: row.get(5)?,
                     })
                 },
-            )?)
+            )
         })
         .await?;
 
@@ -145,7 +145,7 @@ async fn update(
             }
 
             // Fetch updated card
-            Ok(conn.query_row(
+            conn.query_row(
                 "SELECT id, user_email, name, card_type, credit_limit, current_balance
                  FROM cards WHERE id = ?1 AND user_email = ?2",
                 [&id, &email],
@@ -159,7 +159,7 @@ async fn update(
                         current_balance: row.get(5)?,
                     })
                 },
-            )?)
+            )
         })
         .await?;
 
