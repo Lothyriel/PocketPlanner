@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use application::ApiState;
 use axum::Router;
-use lib::infra::DbState;
+use lib::infra::{init_db, DbState};
 use tokio::sync::RwLock;
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -27,10 +27,28 @@ async fn main() {
 
     let jwkset = api::get_google_jwks().await.expect("Get google JWKset");
 
-    let state = DbState::new();
+    let audiences = std::env::var("G_CLIENT_IDS")
+        .ok()
+        .map(|value| {
+            value
+                .split(',')
+                .map(|entry| entry.trim())
+                .filter(|entry| !entry.is_empty())
+                .map(|e| e.to_string())
+                .collect::<Vec<_>>()
+        })
+        .filter(|items| !items.is_empty())
+        .expect("oauth audiences not configured");
+
+    tracing::info!("Loaded G_CLIENT_IDS: {:?}", audiences);
+
+    let db_path = std::env::var("DATABASE_PATH").unwrap_or_else(|_| "pocketplanner.db".to_string());
+    let conn = init_db(&db_path).await.expect("Initialize database");
+    let state = DbState::new(conn);
 
     let api_state = ApiState {
         google_keys: Arc::new(RwLock::new(jwkset)),
+        audiences,
     };
 
     let router = router(state, api_state).layer(tower_http::trace::TraceLayer::new_for_http());

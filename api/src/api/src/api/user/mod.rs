@@ -12,7 +12,13 @@ pub fn router(state: ApiState) -> Router {
         .route("/summary", routing::get(handler))
         // TODO fix this refresh token endpoint and his location
         .route("/token", routing::post(auth::refresh))
-        .route_layer(axum::middleware::from_fn_with_state(state, auth::auth))
+        .route_layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            auth::auth,
+        ))
+        .route("/session", routing::post(auth::session))
+        .route("/session", routing::delete(auth::clear_session))
+        .with_state(state)
 }
 
 pub async fn handler(Extension(user_claims): Extension<UserClaims>) -> Json<UserClaims> {

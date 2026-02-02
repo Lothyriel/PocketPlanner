@@ -1,20 +1,16 @@
 use axum::{
-    extract::{rejection::JsonRejection, FromRequest},
+    extract::{FromRequest, rejection::JsonRejection},
     http::StatusCode,
     response::IntoResponse,
-    Router,
 };
 
 mod api;
 pub mod infra;
 mod util;
 
-use infra::DbState;
 use serde_json::json;
 
-pub fn router(state: DbState) -> Router {
-    Router::new().nest("/api", api::router(state))
-}
+pub use api::router;
 
 impl From<JsonRejection> for AppError {
     fn from(rejection: JsonRejection) -> Self {
@@ -39,14 +35,14 @@ pub type AppResult<T> = Result<T, AppError>;
 pub enum AppError {
     #[error("{0}")]
     Validation(String),
-    #[error("")]
-    Database,
+    #[error("{0}")]
+    Database(#[from] tokio_rusqlite::Error),
 }
 
 impl IntoResponse for AppError {
     fn into_response(self) -> axum::response::Response {
         let code = match self {
-            Self::Database => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::Database(_) => StatusCode::INTERNAL_SERVER_ERROR,
             Self::Validation(_) => StatusCode::BAD_REQUEST,
         };
 

@@ -1,5 +1,6 @@
 use axum::{
     extract::{Request, State},
+    http::header::{COOKIE, SET_COOKIE},
     http::StatusCode,
     middleware::Next,
     response::IntoResponse,
@@ -55,23 +56,72 @@ pub async fn refresh(Json(params): Json<Params>) -> String {
     body
 }
 
+#[derive(serde::Deserialize)]
+pub struct SessionParams {
+    token: String,
+}
+
+pub async fn session(
+    State(state): State<ApiState>,
+    Json(params): Json<SessionParams>,
+) -> Result<impl IntoResponse, AuthError> {
+    let claims = validate_token(&state, &params.token).await?;
+    let cookie = build_cookie(&params.token);
+
+    Ok(([(SET_COOKIE, cookie)], Json(claims)))
+}
+
+pub async fn clear_session() -> impl IntoResponse {
+    let cookie = clear_cookie();
+    ([(SET_COOKIE, cookie)], StatusCode::NO_CONTENT)
+}
+
 async fn insert_claims(state: ApiState, req: &mut Request) -> Result<(), AuthError> {
-    let cookie = req
-        .headers()
-        .get(axum::http::header::COOKIE)
-        .ok_or_else(|| AuthError::TokenNotPresent)?;
-
-    let token = cookie.to_str().map_err(|_| AuthError::TokenNotPresent)?;
-
-    let header = jwt::decode_header(token)?;
-
-    let kid = header.kid.ok_or(AuthError::InvalidKid)?;
-
-    let token_data = get_token_data(state, token, kid).await?;
-
-    req.extensions_mut().insert(token_data.claims);
+    let token = extract_token(req)?;
+    let claims = validate_token(&state, token).await?;
+    req.extensions_mut().insert(claims);
 
     Ok(())
+}
+
+async fn validate_token(state: &ApiState, token: &str) -> Result<UserClaims, AuthError> {
+    let header = jwt::decode_header(token)?;
+    let kid = header.kid.ok_or(AuthError::InvalidKid)?;
+    let token_data = get_token_data(state.clone(), token, kid).await?;
+    Ok(token_data.claims)
+}
+
+fn extract_token(req: &Request) -> Result<&str, AuthError> {
+    if let Some(cookie) = req.headers().get(COOKIE) {
+        let cookie_str = cookie.to_str().map_err(|_| AuthError::TokenNotPresent)?;
+        for part in cookie_str.split(';') {
+            let trimmed = part.trim();
+            if let Some(token) = trimmed.strip_prefix("id_token=") {
+                return Ok(token);
+            }
+        }
+        return Ok(cookie_str);
+    }
+
+    Err(AuthError::TokenNotPresent)
+}
+
+fn build_cookie(token: &str) -> String {
+    let secure = std::env::var("COOKIE_SECURE").ok().as_deref() == Some("true");
+    let mut cookie = format!("id_token={}; HttpOnly; Path=/; SameSite=Lax", token);
+    if secure {
+        cookie.push_str("; Secure");
+    }
+    cookie
+}
+
+fn clear_cookie() -> String {
+    let secure = std::env::var("COOKIE_SECURE").ok().as_deref() == Some("true");
+    let mut cookie = "id_token=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0".to_string();
+    if secure {
+        cookie.push_str("; Secure");
+    }
+    cookie
 }
 
 async fn get_token_data(
@@ -81,6 +131,8 @@ async fn get_token_data(
 ) -> Result<TokenData<UserClaims>, AuthError> {
     let jwkset = state.google_keys.read().await;
 
+    let audiences = &state.audiences;
+
     let jwk = match jwkset.find(&kid) {
         Some(k) => k,
         None => {
@@ -89,22 +141,23 @@ async fn get_token_data(
             *jwkset = get_google_jwks().await?;
 
             let jwk = jwkset.find(&kid).ok_or(AuthError::InvalidKid)?;
-            return Ok(decode_token_data(token, jwk)?);
+            return Ok(decode_token_data(token, jwk, audiences)?);
         }
     };
 
-    Ok(decode_token_data(token, jwk)?)
+    Ok(decode_token_data(token, jwk, audiences)?)
 }
 
-fn decode_token_data(token: &str, jwk: &Jwk) -> Result<TokenData<UserClaims>, Error> {
+fn decode_token_data(
+    token: &str,
+    jwk: &Jwk,
+    audiences: &[String],
+) -> Result<TokenData<UserClaims>, Error> {
     let mut validation = jwt::Validation::new(jwt::Algorithm::RS256);
 
-    validation.set_issuer(&["https://accounts.google.com"]);
+    validation.set_issuer(&["https://accounts.google.com", "accounts.google.com"]);
 
-    validation.set_audience(&[
-        "824653628296-g4ij9785h9c1gkbimm5af42o4l7mket3.apps.googleusercontent.com",
-        "824653628296-ahr9jr3aqgr367mul4p359dj4plsl67a.apps.googleusercontent.com",
-    ]);
+    validation.set_audience(audiences);
 
     jwt::decode::<UserClaims>(token, &jwt::DecodingKey::from_jwk(jwk)?, &validation)
 }
