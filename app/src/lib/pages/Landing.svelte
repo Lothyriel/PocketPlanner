@@ -72,6 +72,11 @@
         Landing page coming soon. Sign in to access your dashboard.
       </p>
     </div>
+    <div
+      class="flex justify-center"
+      bind:this={buttonContainer}
+      aria-label="Sign in with Google"
+    />
     {#if errorMessage}
       <p class="text-sm text-red-500">{errorMessage}</p>
     {/if}
