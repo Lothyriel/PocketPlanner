@@ -1,6 +1,5 @@
 <script lang="ts">
   import { appStore } from "$lib/stores/app.svelte";
-  import { Button } from "$lib/components/ui/button/index.js";
   import { goto } from "@mateothegreat/svelte5-router";
   import { onMount } from "svelte";
 
@@ -64,31 +63,6 @@
 </script>
 
 <div class="flex min-h-screen flex-col">
-  <header
-    class="border-b/40 bg-background/80 supports-[backdrop-filter]:bg-background/60 sticky top-0 flex items-center justify-between px-6 py-4 backdrop-blur"
-  >
-    <div class="flex flex-col">
-      <span class="text-muted-foreground text-xs">Personal finance workspace</span>
-    </div>
-    <div class="flex flex-col items-end gap-2">
-      {#if appStore.isAuthenticated}
-        <Button
-          class="h-11 px-5 text-sm shadow-sm"
-          onclick={() => goto("/dashboard")}
-        >
-          Go to Dashboard
-        </Button>
-      {:else}
-        <div bind:this={buttonContainer}></div>
-        {#if !buttonContainer}
-          <span class="text-muted-foreground text-xs"
-            >Loading Google sign-in…</span
-          >
-        {/if}
-      {/if}
-    </div>
-  </header>
-
   <main
     class="flex flex-1 flex-col items-center justify-center gap-6 px-6 text-center"
   >
