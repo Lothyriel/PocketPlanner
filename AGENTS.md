@@ -5,6 +5,7 @@
 - `api/` is the Rust backend workspace (Axum + Tokio + SQLite with async rusqlite). The HTTP API lives in `api/src/api/`, shared library code in `api/src/lib/`, and a WASM app in `api/src/app/`. Static files served by the API are in `api/public/`.
 - The frontend is a PWA; it will run Rust code in a WASM module and use SQLite backed by IndexedDB.
 - The SQLite database defaults to `api/pocketplanner.db`.
+- Frontend API calls are proxied under `/api` in dev (Vite) and prod (nginx).
 
 ## Build, Test, and Development Commands
 Frontend (run from `app/`):
@@ -34,4 +35,6 @@ Backend (run from `api/`):
 
 ## Security & Configuration Tips
 - The API reads `.env` via `dotenvy`. `DATABASE_PATH` can override the default SQLite file; example: `DATABASE_PATH=./pocketplanner.db`.
+- Google auth client ID is injected at build time via `app/.env.development` and `app/.env.production` (`VITE_GOOGLE_CLIENT_ID`).
+- API config includes `G_CLIENT_IDS` for JWT audience validation and `COOKIE_SECURE` for HTTPS-only cookies.
 - Avoid committing secrets; prefer local `.env` files.
