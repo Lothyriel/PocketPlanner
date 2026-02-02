@@ -25,6 +25,9 @@
   }
 
   onMount(() => {
+    if (appStore.isAuthenticated) {
+      return;
+    }
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     if (!clientId) {
       errorMessage = "Missing Google client ID. Set VITE_GOOGLE_CLIENT_ID.";
@@ -72,11 +75,13 @@
         Landing page coming soon. Sign in to access your dashboard.
       </p>
     </div>
-    <div
-      class="flex justify-center"
-      bind:this={buttonContainer}
-      aria-label="Sign in with Google"
-    />
+    {#if !appStore.isAuthenticated}
+      <div
+        class="flex justify-center"
+        bind:this={buttonContainer}
+        aria-label="Sign in with Google"
+      />
+    {/if}
     {#if errorMessage}
       <p class="text-sm text-red-500">{errorMessage}</p>
     {/if}
