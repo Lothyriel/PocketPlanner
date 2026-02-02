@@ -19,7 +19,7 @@ async fn main() {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or("debug,hyper=warn,rustls=warn,tungstenite=warn".into()),
+                .unwrap_or("debug,hyper=warn,rustls=warn,tungstenite=warn,h2=warn".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
