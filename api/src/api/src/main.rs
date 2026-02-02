@@ -1,8 +1,11 @@
-use std::sync::Arc;
+use std::{
+    net::{Ipv6Addr, SocketAddr},
+    sync::Arc,
+};
 
 use application::ApiState;
 use axum::Router;
-use lib::infra::{init_db, DbState};
+use lib::infra::{DbState, init_db};
 use tokio::sync::RwLock;
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -23,7 +26,7 @@ async fn main() {
 
     dotenvy::dotenv().ok();
 
-    let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 8080));
+    let addr = SocketAddr::new(Ipv6Addr::UNSPECIFIED.into(), 8080);
 
     let jwkset = api::get_google_jwks().await.expect("Get google JWKset");
 
