@@ -1,30 +1,21 @@
 # Build stage
-FROM rust:1.88 AS builder
+FROM lukemathwalker/cargo-chef:latest-rust-1 AS chef
+WORKDIR /app
 
-WORKDIR /
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
 
-# RUN apt-get update && \
-#  apt-get install -y --no-install-recommends clang=1:14.0-55.7~deb12u1
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
 
-# RUN git clone https://github.com/rustwasm/wasm-pack && \
-#  cargo install --path ./wasm-pack
+RUN cargo chef cook --release --recipe-path recipe.json
 
-COPY ./src ./src
-COPY ./Cargo.toml ./
+COPY . .
+RUN cargo build --release --bin api
 
-RUN cargo build --release -p api
-# && wasm-pack build ./src/app --target web --no-typescript --profile bin-size
-
-# Prod stage
-FROM debian:stable-slim
-
+FROM debian:trixie-slim AS runtime
+WORKDIR /app
+COPY --from=builder /app/target/release/api /usr/local/bin
 EXPOSE 8080
-
-COPY --from=builder ./target/release/api /
-
-# COPY --from=builder ./src/app/pkg/app_bg.wasm /public/
-# COPY --from=builder ./src/app/pkg/app.js /public/
-
-COPY ./public /public/
-
-ENTRYPOINT ["./api"]
+ENTRYPOINT ["/usr/local/bin/api"]
