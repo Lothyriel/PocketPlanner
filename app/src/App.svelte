@@ -2,7 +2,8 @@
 	import './app.css';
 	import { Router } from '@mateothegreat/svelte5-router';
 	import { appStore } from '$lib/stores/app.svelte';
-	import Login from '$lib/pages/Login.svelte';
+	import Landing from '$lib/pages/Landing.svelte';
+	import RedirectToLanding from '$lib/pages/RedirectToLanding.svelte';
 	import Dashboard from '$lib/pages/Dashboard.svelte';
 	import Cards from '$lib/pages/Cards.svelte';
 	import Transactions from '$lib/pages/Transactions.svelte';
@@ -10,11 +11,14 @@
 	import { onMount } from 'svelte';
 
 	const publicRoutes = [
-		{ path: '/', component: Login },
+		{ path: '/', component: Landing },
+		{ path: '/dashboard', component: RedirectToLanding },
+		{ path: '/cards', component: RedirectToLanding },
+		{ path: '/transactions', component: RedirectToLanding },
 	];
 
 	const protectedRoutes = [
-		{ path: '/', component: Dashboard },
+		{ path: '/', component: Landing },
 		{ path: '/dashboard', component: Dashboard },
 		{ path: '/cards', component: Cards },
 		{ path: '/transactions', component: Transactions },

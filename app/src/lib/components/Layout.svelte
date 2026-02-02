@@ -26,7 +26,7 @@
 	<header class="border-b">
 		<div class="container mx-auto flex h-16 items-center justify-between px-4">
 			<div class="flex items-center gap-8">
-				<a href="/dashboard" use:route class="text-xl font-bold">PocketPlanner</a>
+				<a href="/" use:route class="text-xl font-bold">PocketPlanner</a>
 				<nav class="hidden gap-6 md:flex">
 					{#each navItems as item}
 						<a

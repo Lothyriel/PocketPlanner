@@ -119,8 +119,12 @@
 										{category?.name} • {card?.name}
 									</p>
 								</div>
-								<p class="font-medium" class:text-red-500={transaction.type === 'expense'} class:text-green-500={transaction.type !== 'expense'}>
-									{transaction.type === 'expense' ? '-' : '+'}{formatCurrency(transaction.amount)}
+								<p
+									class="font-medium"
+									class:text-red-500={transaction.amount >= 0}
+									class:text-green-500={transaction.amount < 0}
+								>
+									{formatCurrency(transaction.amount)}
 								</p>
 							</div>
 						{/each}
