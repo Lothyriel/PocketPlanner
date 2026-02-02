@@ -16,7 +16,7 @@ Frontend (run from `app/`):
 - `pnpm check` runs `svelte-check` and TypeScript typechecking.
 
 Backend (run from `api/`):
-- `cargo run -p api` starts the Axum API server on `0.0.0.0:8080`.
+- `cargo run -p api` starts the Axum API server on `[::]:8080`.
 - `cargo build` builds the workspace.
 - `./build.sh` builds the WASM package and copies artifacts into `api/public/`.
 
