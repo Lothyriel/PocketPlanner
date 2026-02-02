@@ -15,6 +15,9 @@ COPY . .
 RUN cargo build --release --bin api
 
 FROM debian:trixie-slim AS runtime
+
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY --from=builder /app/target/release/api /usr/local/bin
 EXPOSE 8080
