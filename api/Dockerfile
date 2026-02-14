@@ -16,9 +16,12 @@ RUN cargo build --release --bin api
 
 FROM debian:stable-slim AS runtime
 
-RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install --no-install-recommends -y ca-certificates fuse3 sqlite3 && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY --from=builder /app/target/release/api /usr/local/bin
+COPY --from=flyio/litefs:0.5 /usr/local/bin/litefs /usr/local/bin/litefs
+COPY --from=builder /app/litefs.yml /etc/litefs.yml
+
 EXPOSE 8080
-ENTRYPOINT ["/usr/local/bin/api"]
+ENTRYPOINT ["litefs", "mount"]

@@ -45,7 +45,8 @@ async fn main() {
 
     tracing::info!("Loaded G_CLIENT_IDS: {:?}", audiences);
 
-    let db_path = std::env::var("DATABASE_PATH").unwrap_or_else(|_| "pocketplanner.db".to_string());
+    let db_path =
+        std::env::var("DATABASE_PATH").unwrap_or_else(|_| "pocket-planner.db".to_string());
     let conn = init_db(&db_path).await.expect("Initialize database");
     let state = DbState::new(conn);
 
