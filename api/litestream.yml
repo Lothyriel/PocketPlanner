@@ -1,9 +1,8 @@
 dbs:
-  - path: /litefs/pocket-planner.db
-    meta-path: /var/lib/litefs/litestream/pocket-planner
+  - path: /data/pocket-planner.db
     replicas:
       - type: s3
         bucket: "pocket-planner-db"
         path: "pocket-planner.db"
-        endpoint: "fly.storage.tigris.dev"
+        endpoint: "https://t3.storage.dev"
         force-path-style: true
