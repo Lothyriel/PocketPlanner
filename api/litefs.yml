@@ -38,14 +38,13 @@ proxy:
   # Hostport of your application - replace 8081 with whatever port
   # your application is listening on!
   target: "localhost:8080"
-
   # Filename of the SQLite database you want to use for TXID tracking.
   db: "pocket-planner.db"
 
 exec:
   # Only run migrations on candidate nodes.
-  #- cmd: "rails db:migrate"
-  #  if-candidate: true
+  - cmd: "litestream replicate -exec api"
+    if-candidate: true
 
   # Then run the application server on all nodes.
-  - cmd: "/usr/local/bin/api"
+  - cmd: "api"
