@@ -45,7 +45,7 @@ const toCard = (card: ApiCard): Card => ({
   name: card.name,
   type: card.cardType,
   creditLimit: centsToDollars(card.creditLimit) ?? undefined,
-  currentBalance: (centsToDollars(card.currentBalance) ?? 0),
+  currentBalance: centsToDollars(card.currentBalance) ?? 0,
 });
 
 const toCategory = (category: ApiCategory): Category => ({
@@ -58,7 +58,7 @@ const toTransaction = (tx: ApiTransaction): Transaction => ({
   id: tx.id,
   cardId: tx.cardId,
   categoryId: tx.categoryId,
-  amount: (centsToDollars(tx.amount) ?? 0),
+  amount: centsToDollars(tx.amount) ?? 0,
   description: tx.description,
   type: tx.transactionType,
   date: new Date(tx.date),
