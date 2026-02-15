@@ -8,4 +8,3 @@
 - Move PWA assets/config to the nginx frontend container.
 - Configure Fly.io SQLite storage (volume mount, single region, DATABASE_PATH).
 - Update the frontend page title.
-- Configure GitHub Actions workflow for frontend deploy.
