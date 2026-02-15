@@ -10,9 +10,11 @@ import {
 	deleteTransaction,
 	fetchCards,
 	fetchCategories,
-	fetchTransactions,
+	fetchTransactionsPage,
 	fetchUserSummary,
 } from '$lib/api';
+
+const TRANSACTIONS_PAGE_SIZE = 50;
 
 function createAppStore() {
 	let user = $state<User | null>(null);
@@ -20,16 +22,26 @@ function createAppStore() {
 	let cards = $state<Card[]>([]);
 	let transactions = $state<Transaction[]>([]);
 	let categories = $state<Category[]>([]);
+	let transactionsOffset = $state(0);
+	let transactionsHasMore = $state(true);
+	let transactionsLoading = $state(false);
 
 	const loadAll = async () => {
-		const [cardsData, categoriesData, transactionsData] = await Promise.all([
-			fetchCards(),
-			fetchCategories(),
-			fetchTransactions(),
-		]);
-		cards = cardsData;
-		categories = categoriesData;
-		transactions = transactionsData;
+		transactionsLoading = true;
+		try {
+			const [cardsData, categoriesData, transactionsData] = await Promise.all([
+				fetchCards(),
+				fetchCategories(),
+				fetchTransactionsPage({ limit: TRANSACTIONS_PAGE_SIZE, offset: 0 }),
+			]);
+			cards = cardsData;
+			categories = categoriesData;
+			transactions = transactionsData;
+			transactionsOffset = transactionsData.length;
+			transactionsHasMore = transactionsData.length === TRANSACTIONS_PAGE_SIZE;
+		} finally {
+			transactionsLoading = false;
+		}
 	};
 
 	return {
@@ -51,6 +63,9 @@ function createAppStore() {
 				cards = [];
 				transactions = [];
 				categories = [];
+				transactionsOffset = 0;
+				transactionsHasMore = true;
+				transactionsLoading = false;
 				throw err;
 			} finally {
 				isBootstrapping = false;
@@ -64,6 +79,9 @@ function createAppStore() {
 			cards = [];
 			transactions = [];
 			categories = [];
+			transactionsOffset = 0;
+			transactionsHasMore = true;
+			transactionsLoading = false;
 		},
 
 		// Cards
@@ -76,7 +94,9 @@ function createAppStore() {
 		async deleteCard(id: string) {
 			await deleteCard(id);
 			cards = cards.filter(c => c.id !== id);
+			const removedCount = transactions.filter(t => t.cardId === id).length;
 			transactions = transactions.filter(t => t.cardId !== id);
+			transactionsOffset = Math.max(0, transactionsOffset - removedCount);
 		},
 		getCard(id: string) {
 			return cards.find(c => c.id === id);
@@ -84,9 +104,32 @@ function createAppStore() {
 
 		// Transactions
 		get transactions() { return transactions; },
+		get transactionsHasMore() { return transactionsHasMore; },
+		get transactionsLoading() { return transactionsLoading; },
+		async loadMoreTransactions(limit = TRANSACTIONS_PAGE_SIZE) {
+			if (transactionsLoading || !transactionsHasMore) {
+				return;
+			}
+
+			transactionsLoading = true;
+			try {
+				const nextPage = await fetchTransactionsPage({
+					limit,
+					offset: transactionsOffset,
+				});
+				const existingIds = new Set(transactions.map(t => t.id));
+				const uniqueTransactions = nextPage.filter(t => !existingIds.has(t.id));
+				transactions = [...transactions, ...uniqueTransactions];
+				transactionsOffset += nextPage.length;
+				transactionsHasMore = nextPage.length === limit;
+			} finally {
+				transactionsLoading = false;
+			}
+		},
 		async addTransaction(transaction: Omit<Transaction, 'id'>) {
 			const newTransaction = await createTransaction(transaction);
 			transactions = [...transactions, newTransaction];
+			transactionsOffset += 1;
 
 			// Update card balance
 			const card = cards.find(c => c.id === newTransaction.cardId);
@@ -106,6 +149,9 @@ function createAppStore() {
 				}
 			}
 			transactions = transactions.filter(t => t.id !== id);
+			if (transaction) {
+				transactionsOffset = Math.max(0, transactionsOffset - 1);
+			}
 		},
 		getTransactionsByCard(cardId: string) {
 			return transactions.filter(t => t.cardId === cardId);

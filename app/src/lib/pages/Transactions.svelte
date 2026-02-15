@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { appStore } from '$lib/stores/app.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -11,6 +12,8 @@
 	let cardId = $state('');
 	let categoryId = $state('');
 	let date = $state(new Date().toISOString().split('T')[0]);
+	let loadMoreTrigger = $state<HTMLDivElement | null>(null);
+	let observer: IntersectionObserver | null = null;
 
 	const sortedTransactions = $derived(
 		[...appStore.transactions].sort((a, b) => b.date.getTime() - a.date.getTime())
@@ -56,6 +59,40 @@
 		categoryId = '';
 		date = new Date().toISOString().split('T')[0];
 	}
+
+	async function loadNextPage() {
+		await appStore.loadMoreTransactions();
+	}
+
+	onMount(() => {
+		if (appStore.transactions.length === 0 && !appStore.transactionsLoading) {
+			void loadNextPage();
+		}
+		return () => {
+			observer?.disconnect();
+			observer = null;
+		};
+	});
+
+	$effect(() => {
+		if (!loadMoreTrigger) {
+			return;
+		}
+		observer?.disconnect();
+		observer = new IntersectionObserver((entries) => {
+			if (
+				entries.some((entry) => entry.isIntersecting) &&
+				!appStore.transactionsLoading &&
+				appStore.transactionsHasMore
+			) {
+				void loadNextPage();
+			}
+		}, { rootMargin: '200px 0px' });
+		observer.observe(loadMoreTrigger);
+		return () => {
+			observer?.disconnect();
+		};
+	});
 </script>
 
 <div class="space-y-6">
@@ -144,7 +181,13 @@
 		</Card.Root>
 	{/if}
 
-	{#if sortedTransactions.length === 0 && !showForm}
+	{#if sortedTransactions.length === 0 && appStore.transactionsLoading}
+		<Card.Root>
+			<Card.Content class="py-8 text-center">
+				<p class="text-muted-foreground">Loading transactions...</p>
+			</Card.Content>
+		</Card.Root>
+	{:else if sortedTransactions.length === 0 && !showForm}
 		<Card.Root>
 			<Card.Content class="py-8 text-center">
 				<p class="text-muted-foreground">No transactions yet.</p>
@@ -191,5 +234,11 @@
 				</div>
 			</Card.Content>
 		</Card.Root>
+
+		{#if appStore.transactionsHasMore}
+			<div bind:this={loadMoreTrigger} class="py-3 text-center text-sm text-muted-foreground">
+				{appStore.transactionsLoading ? 'Loading more...' : 'Scroll for more transactions'}
+			</div>
+		{/if}
 	{/if}
 </div>

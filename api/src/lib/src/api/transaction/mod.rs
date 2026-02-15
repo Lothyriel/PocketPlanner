@@ -1,11 +1,12 @@
 use axum::{
     Extension, Router,
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
     routing,
 };
 use chrono::{DateTime, Utc};
+use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::{
@@ -22,20 +23,29 @@ pub fn router(state: DbState) -> Router {
         .with_state(state)
 }
 
+#[derive(Deserialize)]
+struct TransactionListQuery {
+    limit: Option<u32>,
+    offset: Option<u32>,
+}
+
 async fn list(
     State(state): State<DbState>,
     Extension(claims): Extension<UserClaims>,
+    Query(query): Query<TransactionListQuery>,
 ) -> Response<Vec<Transaction>> {
+    let limit = query.limit.unwrap_or(50).clamp(1, 200) as i64;
+    let offset = query.offset.unwrap_or(0) as i64;
     let email = claims.email;
     let transactions = state
         .conn
         .call(move |conn| {
             let mut stmt = conn.prepare(
                 "SELECT id, user_email, card_id, category_id, amount, description, transaction_type, date
-                 FROM transactions WHERE user_email = ?1 ORDER BY date DESC",
+                 FROM transactions WHERE user_email = ?1 ORDER BY date DESC LIMIT ?2 OFFSET ?3",
             )?;
             let transactions = stmt
-                .query_map([&email], |row| {
+                .query_map((&email, limit, offset), |row| {
                     Ok(Transaction {
                         id: row.get(0)?,
                         user_email: row.get(1)?,
@@ -107,7 +117,7 @@ async fn create(
     let email = claims.email;
     let card_id = input.card_id;
     let amount = input.amount;
-            let _tx_type = input.transaction_type;
+    let _tx_type = input.transaction_type;
 
     state
         .conn
