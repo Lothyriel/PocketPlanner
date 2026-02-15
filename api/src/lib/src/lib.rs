@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::{
     extract::{FromRequest, rejection::JsonRejection},
     http::StatusCode,
@@ -33,19 +35,31 @@ pub type AppResult<T> = Result<T, AppError>;
 
 #[derive(thiserror::Error, Debug)]
 pub enum AppError {
-    #[error("{0}")]
+    #[error("Validation error: {0}")]
     Validation(String),
-    #[error("{0}")]
+    #[error("rusqlite error: {0}")]
     Database(#[from] tokio_rusqlite::Error),
 }
 
 impl IntoResponse for AppError {
     fn into_response(self) -> axum::response::Response {
-        let code = match self {
-            Self::Database(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            Self::Validation(_) => StatusCode::BAD_REQUEST,
+        let (code, msg, err) = match self {
+            Self::Database(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                self.to_string(),
+                Some(self),
+            ),
+            Self::Validation(reason) => (StatusCode::BAD_REQUEST, reason, None),
         };
 
-        (code, Json(json!({"error": self.to_string() }))).into_response()
+        let mut response = (code, Json(json!({"error": msg }))).into_response();
+
+        if let Some(err) = err {
+            // Insert our error into the response, our logging middleware will use this.
+            // By wrapping the error in an Arc we can use it as an Extension regardless of any inner types not deriving Clone.
+            response.extensions_mut().insert(Arc::new(err));
+        }
+
+        response
     }
 }

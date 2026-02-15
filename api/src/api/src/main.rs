@@ -4,8 +4,16 @@ use std::{
 };
 
 use application::ApiState;
-use axum::Router;
-use lib::infra::{DbState, init_db};
+use axum::{
+    Router,
+    extract::Request,
+    middleware::{Next, from_fn},
+    response::Response,
+};
+use lib::{
+    AppError,
+    infra::{DbState, init_db},
+};
 use tokio::sync::RwLock;
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -63,7 +71,9 @@ async fn main() {
         secure_env,
     };
 
-    let router = router(state, api_state).layer(tower_http::trace::TraceLayer::new_for_http());
+    let router = router(state, api_state)
+        .layer(tower_http::trace::TraceLayer::new_for_http())
+        .layer(from_fn(log_app_errors));
 
     let listener = tokio::net::TcpListener::bind(addr)
         .await
@@ -76,6 +86,16 @@ async fn main() {
     if let Err(err) = server.await {
         tracing::error!("{}", err);
     }
+}
+
+async fn log_app_errors(request: Request, next: Next) -> Response {
+    let response = next.run(request).await;
+
+    if let Some(err) = response.extensions().get::<Arc<AppError>>() {
+        tracing::error!(?err, "an unexpected error occurred inside a handler");
+    }
+
+    response
 }
 
 pub fn router(state: DbState, api_state: ApiState) -> Router {
