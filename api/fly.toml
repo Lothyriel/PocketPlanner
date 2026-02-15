@@ -9,6 +9,8 @@ primary_region = "gru"
 
 [env]
   DATABASE_PATH = "/litefs/pocket-planner.db"
+  SECURE_ENV = "true"
+  G_CLIENT_IDS = "824653628296-idlah1hdlcjpmeb8310l0ipeo12li5tu.apps.googleusercontent.com"
 
 [mounts]
   source = "litefs"

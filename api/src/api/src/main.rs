@@ -14,6 +14,13 @@ mod api;
 mod application;
 mod extensions;
 
+#[macro_export]
+macro_rules! expect_env {
+    ($var_name:expr) => {
+        std::env::var($var_name).expect(concat!("env missing: ", $var_name))
+    };
+}
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::registry()
@@ -30,8 +37,7 @@ async fn main() {
 
     let jwkset = api::get_google_jwks().await.expect("Get google JWKset");
 
-    let audiences = std::env::var("G_CLIENT_IDS")
-        .ok()
+    let audiences = Some(expect_env!("G_CLIENT_IDS"))
         .map(|value| {
             value
                 .split(',')
@@ -45,14 +51,16 @@ async fn main() {
 
     tracing::info!("Loaded G_CLIENT_IDS: {:?}", audiences);
 
-    let db_path =
-        std::env::var("DATABASE_PATH").unwrap_or_else(|_| "pocket-planner.db".to_string());
+    let secure_env = expect_env!("SECURE_ENV") == "true";
+
+    let db_path = expect_env!("DATABASE_PATH");
     let conn = init_db(&db_path).await.expect("Initialize database");
     let state = DbState::new(conn);
 
     let api_state = ApiState {
         google_keys: Arc::new(RwLock::new(jwkset)),
         audiences,
+        secure_env,
     };
 
     let router = router(state, api_state).layer(tower_http::trace::TraceLayer::new_for_http());
@@ -68,13 +76,6 @@ async fn main() {
     if let Err(err) = server.await {
         tracing::error!("{}", err);
     }
-}
-
-#[allow(unused_macros)]
-macro_rules! expect_env {
-    ($var_name:expr) => {
-        std::env::var($var_name).expect(concat!("env missing: ", $var_name))
-    };
 }
 
 pub fn router(state: DbState, api_state: ApiState) -> Router {

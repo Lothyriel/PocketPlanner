@@ -1,17 +1,17 @@
 use axum::{
     extract::{Request, State},
-    http::header::{COOKIE, SET_COOKIE},
     http::StatusCode,
+    http::header::{COOKIE, SET_COOKIE},
     middleware::Next,
     response::IntoResponse,
 };
 use jsonwebtoken::{self as jwt};
-use jwt::{errors::Error, jwk::Jwk, TokenData};
-use lib::{infra::UserClaims, Json};
+use jwt::{TokenData, errors::Error, jwk::Jwk};
+use lib::{Json, infra::UserClaims};
 use reqwest::Client;
 use serde_json::json;
 
-use crate::application::ApiState;
+use crate::{application::ApiState, expect_env};
 
 pub async fn auth(
     State(state): State<ApiState>,
@@ -32,7 +32,7 @@ pub struct Params {
 pub async fn refresh(Json(params): Json<Params>) -> String {
     let client = Client::new();
 
-    let secret = std::env::var("G_CLIENT_SECRET").expect("G_CLIENT_SECRET");
+    let secret = expect_env!("G_CLIENT_SECRET");
 
     let body = json! ({
         "client_id": params.client_id,
@@ -48,7 +48,7 @@ pub async fn refresh(Json(params): Json<Params>) -> String {
         .await
         .expect("Google is down");
 
-    // todo: there expects are ugly
+    // todo: these expects are ugly
     let body = response.text().await.expect("Should have text");
 
     tracing::warn!("Google refresh token: {}", body);
@@ -66,13 +66,13 @@ pub async fn session(
     Json(params): Json<SessionParams>,
 ) -> Result<impl IntoResponse, AuthError> {
     let claims = validate_token(&state, &params.token).await?;
-    let cookie = build_cookie(&params.token);
+    let cookie = build_cookie(&params.token, &state);
 
     Ok(([(SET_COOKIE, cookie)], Json(claims)))
 }
 
-pub async fn clear_session() -> impl IntoResponse {
-    let cookie = clear_cookie();
+pub async fn clear_session(State(state): State<ApiState>) -> impl IntoResponse {
+    let cookie = clear_cookie(&state);
     ([(SET_COOKIE, cookie)], StatusCode::NO_CONTENT)
 }
 
@@ -106,19 +106,17 @@ fn extract_token(req: &Request) -> Result<&str, AuthError> {
     Err(AuthError::TokenNotPresent)
 }
 
-fn build_cookie(token: &str) -> String {
-    let secure = std::env::var("COOKIE_SECURE").ok().as_deref() == Some("true");
+fn build_cookie(token: &str, state: &ApiState) -> String {
     let mut cookie = format!("id_token={}; HttpOnly; Path=/; SameSite=Lax", token);
-    if secure {
+    if state.secure_env {
         cookie.push_str("; Secure");
     }
     cookie
 }
 
-fn clear_cookie() -> String {
-    let secure = std::env::var("COOKIE_SECURE").ok().as_deref() == Some("true");
+fn clear_cookie(state: &ApiState) -> String {
     let mut cookie = "id_token=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0".to_string();
-    if secure {
+    if state.secure_env {
         cookie.push_str("; Secure");
     }
     cookie

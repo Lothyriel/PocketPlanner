@@ -1,4 +1,4 @@
-use axum::{routing, Extension, Json, Router};
+use axum::{Extension, Json, Router, routing};
 use lib::infra::UserClaims;
 
 use crate::application::ApiState;

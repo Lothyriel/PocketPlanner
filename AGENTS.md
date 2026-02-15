@@ -36,5 +36,4 @@ Backend (run from `api/`):
 ## Security & Configuration Tips
 - The API reads `.env` via `dotenvy`. `DATABASE_PATH` can override the default SQLite file; example: `DATABASE_PATH=./pocketplanner.db`.
 - Google auth client ID is injected at build time via `app/.env.development` and `app/.env.production` (`VITE_GOOGLE_CLIENT_ID`).
-- API config includes `G_CLIENT_IDS` for JWT audience validation and `COOKIE_SECURE` for HTTPS-only cookies.
 - Avoid committing secrets; prefer local `.env` files.

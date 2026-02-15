@@ -10,4 +10,5 @@ pub mod model;
 pub struct ApiState {
     pub google_keys: Arc<RwLock<JwkSet>>,
     pub audiences: Vec<String>,
+    pub secure_env: bool,
 }
