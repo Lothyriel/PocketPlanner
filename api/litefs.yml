@@ -42,7 +42,6 @@ proxy:
   db: "pocket-planner.db"
 
 exec:
-  # Only run migrations on candidate nodes.
   - cmd: "litestream replicate -exec api"
     if-candidate: true
 
