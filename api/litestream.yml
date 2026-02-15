@@ -1,6 +1,6 @@
 dbs:
   - path: /litefs/pocket-planner.db
-    meta-path: /var/lib/litefs/pocket-planner.db-litestream
+    meta-path: /var/lib/litefs/litestream/pocket-planner
     replicas:
       - type: s3
         bucket: "pocket-planner-db"
