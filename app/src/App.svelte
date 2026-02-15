@@ -1,27 +1,31 @@
 <script lang="ts">
   import './app.css';
-  import { Router } from '@mateothegreat/svelte5-router';
+  import { Router, goto } from '@mateothegreat/svelte5-router';
   import { appStore } from '$lib/stores/app.svelte';
   import Landing from '$lib/pages/Landing.svelte';
-  import RedirectToLanding from '$lib/pages/RedirectToLanding.svelte';
   import Dashboard from '$lib/pages/Dashboard.svelte';
   import Cards from '$lib/pages/Cards.svelte';
   import Transactions from '$lib/pages/Transactions.svelte';
   import Layout from '$lib/components/Layout.svelte';
   import { onMount } from 'svelte';
 
-  const publicRoutes = [
-    { path: '/', component: Landing },
-    { path: '/dashboard', component: RedirectToLanding },
-    { path: '/cards', component: RedirectToLanding },
-    { path: '/transactions', component: RedirectToLanding },
-  ];
+  const requireAuth = () => {
+    if (!appStore.isAuthenticated) {
+      goto('/');
+      return false;
+    }
+    return true;
+  };
 
-  const protectedRoutes = [
+  const routes = [
     { path: '/', component: Landing },
-    { path: '/dashboard', component: Dashboard },
-    { path: '/cards', component: Cards },
-    { path: '/transactions', component: Transactions },
+    { path: '/dashboard', component: Dashboard, hooks: { pre: requireAuth } },
+    { path: '/cards', component: Cards, hooks: { pre: requireAuth } },
+    {
+      path: '/transactions',
+      component: Transactions,
+      hooks: { pre: requireAuth },
+    },
   ];
 
   onMount(() => {
@@ -37,8 +41,8 @@
   </div>
 {:else if appStore.isAuthenticated}
   <Layout>
-    <Router routes={protectedRoutes} />
+    <Router {routes} />
   </Layout>
 {:else}
-  <Router routes={publicRoutes} />
+  <Router {routes} />
 {/if}
