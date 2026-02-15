@@ -80,7 +80,7 @@
         class="flex justify-center"
         bind:this={buttonContainer}
         aria-label="Sign in with Google"
-      />
+      ></div>
     {/if}
     {#if errorMessage}
       <p class="text-sm text-red-500">{errorMessage}</p>
