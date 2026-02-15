@@ -44,7 +44,7 @@ mod tests {
     use chrono::{Datelike, NaiveDate};
     use rust_decimal::Decimal;
 
-    use crate::application::extractors::{picpay::Picpay, CreditCardInvoiceExtractor};
+    use crate::application::extractors::{CreditCardInvoiceExtractor, picpay::Picpay};
 
     #[test]
     fn picpay_extraction() {

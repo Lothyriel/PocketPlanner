@@ -1,5 +1,5 @@
-use axum::{extract::Query, Json};
-use rust_decimal::{prelude::FromPrimitive, Decimal};
+use axum::{Json, extract::Query};
+use rust_decimal::{Decimal, prelude::FromPrimitive};
 use rust_decimal_macros::dec;
 
 use super::{CDI, SELIC};

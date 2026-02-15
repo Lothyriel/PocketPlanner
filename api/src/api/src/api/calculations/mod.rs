@@ -2,7 +2,7 @@ pub mod installments;
 pub mod savings;
 mod wage_deduction;
 
-use axum::{routing, Router};
+use axum::{Router, routing};
 
 pub fn router() -> Router {
     Router::new()
