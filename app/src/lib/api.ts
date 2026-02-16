@@ -71,7 +71,24 @@ const toUser = (claims: ApiUserClaims): User => ({
   avatarUrl: claims.picture,
 });
 
-async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+let refreshPromise: Promise<boolean> | null = null;
+
+async function refreshAccessToken(): Promise<boolean> {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      const response = await fetch(`${API_BASE}/user/session/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      return response.ok;
+    })().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
+
+async function apiFetch<T>(path: string, options: RequestInit = {}, canRetry = true): Promise<T> {
   const { headers, ...rest } = options;
   const response = await fetch(`${API_BASE}${path}`, {
     ...rest,
@@ -81,6 +98,18 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
     },
     credentials: 'include',
   });
+
+  if (
+    response.status === 401 &&
+    canRetry &&
+    path !== '/user/session' &&
+    path !== '/user/session/refresh'
+  ) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      return apiFetch<T>(path, options, false);
+    }
+  }
 
   if (response.status === 204) {
     return null as T;
@@ -95,7 +124,7 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 }
 
 export async function fetchUserSummary(): Promise<User> {
-  const claims = await apiFetch<ApiUserClaims>('/user/summary');
+  const claims = await apiFetch<ApiUserClaims>('/user/me');
   return toUser(claims);
 }
 

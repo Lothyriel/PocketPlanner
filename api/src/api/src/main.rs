@@ -45,21 +45,17 @@ async fn main() {
 
     let jwkset = api::get_google_jwks().await.expect("Get google JWKset");
 
-    let audiences = Some(expect_env!("G_CLIENT_IDS"))
-        .map(|value| {
-            value
-                .split(',')
-                .map(|entry| entry.trim())
-                .filter(|entry| !entry.is_empty())
-                .map(|e| e.to_string())
-                .collect::<Vec<_>>()
-        })
-        .filter(|items| !items.is_empty())
-        .expect("oauth audiences not configured");
+    let audience = expect_env!("G_CLIENT_ID");
 
-    tracing::info!("Loaded G_CLIENT_IDS: {:?}", audiences);
+    tracing::info!("Loaded G_CLIENT_ID: {:?}", audience);
 
     let secure_env = expect_env!("SECURE_ENV") == "true";
+
+    let jwt_access_secret = expect_env!("JWT_ACCESS_SECRET");
+    let jwt_refresh_secret = expect_env!("JWT_REFRESH_SECRET");
+
+    let access_ttl = expect_env!("JWT_ACCESS_TTL").parse().expect("");
+    let refresh_ttl = expect_env!("JWT_REFRESH_TTL").parse().expect("");
 
     let db_path = expect_env!("DATABASE_PATH");
     let conn = init_db(&db_path).await.expect("Initialize database");
@@ -67,8 +63,14 @@ async fn main() {
 
     let api_state = ApiState {
         google_keys: Arc::new(RwLock::new(jwkset)),
-        audiences,
+        audience,
         secure_env,
+        jwt_access_secret,
+        jwt_refresh_secret,
+        jwt_issuer: "pocket-planner-api".to_string(),
+        jwt_audience: "pocket-planner-clients".to_string(),
+        access_ttl,
+        refresh_ttl,
     };
 
     let router = router(state, api_state)

@@ -8,16 +8,14 @@ mod auth;
 pub use auth::{auth, get_google_jwks};
 
 pub fn router(state: ApiState) -> Router {
+    let auth = axum::middleware::from_fn_with_state(state.clone(), auth::auth);
+
     Router::new()
-        .route("/summary", routing::get(handler))
-        // TODO fix this refresh token endpoint and his location
-        .route("/token", routing::post(auth::refresh))
-        .route_layer(axum::middleware::from_fn_with_state(
-            state.clone(),
-            auth::auth,
-        ))
-        .route("/session", routing::post(auth::session))
-        .route("/session", routing::delete(auth::clear_session))
+        .route("/me", routing::get(handler))
+        .route_layer(auth)
+        .route("/session/refresh", routing::post(auth::refresh))
+        .route("/session", routing::post(auth::login))
+        .route("/session", routing::delete(auth::logout))
         .with_state(state)
 }
 
