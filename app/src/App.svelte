@@ -6,6 +6,7 @@
   import Dashboard from '$lib/pages/Dashboard.svelte';
   import Cards from '$lib/pages/Cards.svelte';
   import Transactions from '$lib/pages/Transactions.svelte';
+  import NotFound from '$lib/pages/NotFound.svelte';
   import Layout from '$lib/components/Layout.svelte';
   import { onMount } from 'svelte';
 
@@ -21,11 +22,7 @@
     { path: '/', component: Landing },
     { path: '/dashboard', component: Dashboard, hooks: { pre: requireAuth } },
     { path: '/cards', component: Cards, hooks: { pre: requireAuth } },
-    {
-      path: '/transactions',
-      component: Transactions,
-      hooks: { pre: requireAuth },
-    },
+    { path: '/transactions', component: Transactions, hooks: { pre: requireAuth } },
   ];
 
   onMount(() => {
@@ -41,8 +38,8 @@
   </div>
 {:else if appStore.isAuthenticated}
   <Layout>
-    <Router {routes} />
+    <Router {routes} statuses={{ 404: () => ({ component: NotFound }) }} />
   </Layout>
 {:else}
-  <Router {routes} />
+  <Router {routes} statuses={{ 404: () => ({ component: NotFound }) }} />
 {/if}
