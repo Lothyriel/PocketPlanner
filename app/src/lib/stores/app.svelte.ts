@@ -96,7 +96,7 @@ function createAppStore() {
     },
     async addCard(card: Omit<Card, 'id'>) {
       const newCard = await createCard(card);
-      cards = [...cards, newCard];
+      cards.push(newCard);
       return newCard;
     },
     async deleteCard(id: string) {

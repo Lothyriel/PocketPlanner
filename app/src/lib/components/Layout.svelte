@@ -31,8 +31,11 @@
           {#each navItems as item}
             <a
               href={item.path}
-              use:route
-              class="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
+              use:route={{
+                active: { class: 'bg-secondary text-foreground', absolute: true },
+                default: { class: 'text-muted-foreground', absolute: true },
+              }}
+              class="hover:text-foreground rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
             >
               {item.label}
             </a>
@@ -40,13 +43,36 @@
         </nav>
       </div>
       <div class="flex items-center gap-4">
-        <span class="text-muted-foreground text-sm">{appStore.user?.email}</span>
+        <span class="text-muted-foreground hidden text-sm md:inline">{appStore.user?.email}</span>
         <Button variant="ghost" size="sm" onclick={handleLogout}>Logout</Button>
       </div>
     </div>
   </header>
 
-  <main class="container mx-auto px-4 py-8">
+  <main class="container mx-auto px-4 py-8 pb-24 md:pb-8">
     {@render children()}
   </main>
+
+  <nav
+    class="bg-background/95 fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden"
+  >
+    <div class="mx-auto grid max-w-md grid-cols-3 gap-1 px-3 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
+      {#each navItems as item}
+        <a
+          href={item.path}
+          use:route={{
+            active: {
+              class:
+                'bg-primary text-primary-foreground shadow-[0_6px_16px_-10px_color-mix(in_oklch,var(--primary)_60%,transparent)]',
+              absolute: true,
+            },
+            default: { class: 'text-muted-foreground', absolute: true },
+          }}
+          class="rounded-xl px-3 py-2.5 text-center text-sm font-medium transition-all duration-200"
+        >
+          {item.label}
+        </a>
+      {/each}
+    </div>
+  </nav>
 </div>
