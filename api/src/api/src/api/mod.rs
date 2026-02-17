@@ -5,7 +5,7 @@ use axum::{Router, routing};
 
 use crate::application::ApiState;
 
-pub use user::{auth, get_google_jwks};
+pub use user::auth;
 
 pub fn router(state: ApiState) -> Router {
     Router::new()

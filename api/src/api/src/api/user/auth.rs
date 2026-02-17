@@ -8,8 +8,8 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use jsonwebtoken::{self as jwt};
-use jwt::{TokenData, errors::Error, jwk::Jwk};
 use lib::{Json, infra::UserClaims};
+use openidconnect::{Nonce, core::CoreIdToken};
 use serde_json::json;
 
 use crate::application::ApiState;
@@ -24,7 +24,7 @@ pub async fn auth(
     mut req: Request,
     next: Next,
 ) -> Result<Response, AuthError> {
-    let token = extract_cookie(&req, ACCESS_COOKIE).ok_or(AuthError::TokenNotPresent)?;
+    let token = extract_cookie(&req, ACCESS_COOKIE)?;
     let claims = validate_local_token(&state, token, TokenKind::Access)?;
     req.extensions_mut().insert(claims.to_user_claims());
     Ok(next.run(req).await)
@@ -44,7 +44,28 @@ pub async fn login(
     let access_token = encode_local_token(&state, &claims, TokenKind::Access)?;
     let refresh_token = encode_local_token(&state, &claims, TokenKind::Refresh)?;
 
-    let mut response = Json(claims).into_response();
+    build_auth_response(state, claims, access_token, refresh_token)
+}
+
+pub async fn refresh(State(state): State<ApiState>, req: Request) -> Result<Response, AuthError> {
+    let refresh_token = extract_cookie(&req, REFRESH_COOKIE)?;
+    let claims = validate_local_token(&state, refresh_token, TokenKind::Refresh)?;
+
+    let user_claims = claims.to_user_claims();
+    let access_token = encode_local_token(&state, &user_claims, TokenKind::Access)?;
+    let next_refresh_token = encode_local_token(&state, &user_claims, TokenKind::Refresh)?;
+
+    build_auth_response(state, user_claims, access_token, next_refresh_token)
+}
+
+fn build_auth_response(
+    state: ApiState,
+    user_claims: UserClaims,
+    access_token: String,
+    refresh_token: String,
+) -> Result<Response, AuthError> {
+    let mut response = Json(user_claims).into_response();
+
     append_set_cookie(
         &mut response,
         build_cookie(
@@ -52,9 +73,10 @@ pub async fn login(
             &access_token,
             ACCESS_COOKIE_PATH,
             &state,
-            Some(state.access_ttl),
+            state.access_ttl,
         ),
     )?;
+
     append_set_cookie(
         &mut response,
         build_cookie(
@@ -62,40 +84,7 @@ pub async fn login(
             &refresh_token,
             REFRESH_COOKIE_PATH,
             &state,
-            Some(state.refresh_ttl),
-        ),
-    )?;
-
-    Ok(response)
-}
-
-pub async fn refresh(State(state): State<ApiState>, req: Request) -> Result<Response, AuthError> {
-    let refresh_token = extract_cookie(&req, REFRESH_COOKIE).ok_or(AuthError::TokenNotPresent)?;
-    let claims = validate_local_token(&state, refresh_token, TokenKind::Refresh)?;
-
-    let user_claims = claims.to_user_claims();
-    let access_token = encode_local_token(&state, &user_claims, TokenKind::Access)?;
-    let next_refresh_token = encode_local_token(&state, &user_claims, TokenKind::Refresh)?;
-
-    let mut response = Json(user_claims).into_response();
-    append_set_cookie(
-        &mut response,
-        build_cookie(
-            ACCESS_COOKIE,
-            &access_token,
-            ACCESS_COOKIE_PATH,
-            &state,
-            Some(state.access_ttl),
-        ),
-    )?;
-    append_set_cookie(
-        &mut response,
-        build_cookie(
-            REFRESH_COOKIE,
-            &next_refresh_token,
-            REFRESH_COOKIE_PATH,
-            &state,
-            Some(state.refresh_ttl),
+            state.refresh_ttl,
         ),
     )?;
 
@@ -117,10 +106,21 @@ pub async fn logout(State(state): State<ApiState>) -> Result<Response, AuthError
 }
 
 async fn validate_google_token(state: &ApiState, token: &str) -> Result<UserClaims, AuthError> {
-    let header = jwt::decode_header(token)?;
-    let kid = header.kid.ok_or(AuthError::InvalidKid)?;
-    let token_data = get_google_token_data(state.clone(), token, kid).await?;
-    Ok(token_data.claims)
+    let id_token: CoreIdToken = serde_json::from_value(serde_json::Value::String(token.into()))
+        .map_err(|err| AuthError::OpenId(err.to_string()))?;
+
+    let verifier = state.google_client.id_token_verifier();
+
+    let claims = id_token
+        .claims(&verifier, |_: Option<&Nonce>| Ok(()))
+        .map_err(|err| AuthError::OpenId(err.to_string()))?;
+
+    let raw_claims: GoogleProfileClaims = serde_json::from_value(
+        serde_json::to_value(claims).map_err(|err| AuthError::OpenId(err.to_string()))?,
+    )
+    .map_err(|err| AuthError::OpenId(err.to_string()))?;
+
+    raw_claims.try_into()
 }
 
 fn encode_local_token(
@@ -134,7 +134,7 @@ fn encode_local_token(
         TokenKind::Refresh => state.refresh_ttl,
     };
 
-    let token_claims = LocalTokenClaims {
+    let token_claims = AppTokenClaims {
         sub: claims.email.clone(),
         email: claims.email.clone(),
         name: claims.name.clone(),
@@ -162,7 +162,7 @@ fn validate_local_token(
     state: &ApiState,
     token: &str,
     expected: TokenKind,
-) -> Result<LocalTokenClaims, AuthError> {
+) -> Result<AppTokenClaims, AuthError> {
     let mut validation = jwt::Validation::new(jwt::Algorithm::HS256);
     validation.set_issuer(&[&state.jwt_issuer]);
     validation.set_audience(&[&state.jwt_audience]);
@@ -172,7 +172,7 @@ fn validate_local_token(
         TokenKind::Refresh => &state.jwt_refresh_secret,
     };
 
-    let token_data = jwt::decode::<LocalTokenClaims>(
+    let token_data = jwt::decode::<AppTokenClaims>(
         token,
         &jwt::DecodingKey::from_secret(secret.as_bytes()),
         &validation,
@@ -185,29 +185,28 @@ fn validate_local_token(
     Ok(token_data.claims)
 }
 
-fn extract_cookie<'a>(req: &'a Request, name: &str) -> Option<&'a str> {
-    let cookies = req.headers().get(COOKIE)?.to_str().ok()?;
+fn extract_cookie<'a>(req: &'a Request, name: &str) -> Result<&'a str, AuthError> {
+    let cookies = req
+        .headers()
+        .get(COOKIE)
+        .and_then(|t| t.to_str().ok())
+        .ok_or(AuthError::TokenNotPresent)?;
 
-    cookies.split(';').find_map(|part| {
-        let trimmed = part.trim();
-        trimmed
-            .strip_prefix(name)
-            .and_then(|value| value.strip_prefix('='))
-    })
+    cookies
+        .split(';')
+        .find_map(|part| {
+            let trimmed = part.trim();
+            trimmed
+                .strip_prefix(name)
+                .and_then(|value| value.strip_prefix('='))
+        })
+        .ok_or(AuthError::TokenNotPresent)
 }
 
-fn build_cookie(
-    name: &str,
-    token: &str,
-    path: &str,
-    state: &ApiState,
-    max_age_seconds: Option<u64>,
-) -> String {
+fn build_cookie(name: &str, token: &str, path: &str, state: &ApiState, max_age: u64) -> String {
     let mut cookie = format!("{name}={token}; HttpOnly; Path={path}; SameSite=Lax");
 
-    if let Some(max_age) = max_age_seconds {
-        cookie.push_str(&format!("; Max-Age={max_age}"));
-    }
+    cookie.push_str(&format!("; Max-Age={max_age}"));
 
     if state.secure_env {
         cookie.push_str("; Secure");
@@ -230,47 +229,6 @@ fn append_set_cookie(response: &mut Response, cookie: String) -> Result<(), Auth
     Ok(())
 }
 
-async fn get_google_token_data(
-    state: ApiState,
-    token: &str,
-    kid: String,
-) -> Result<TokenData<UserClaims>, AuthError> {
-    let jwkset = state.google_keys.read().await;
-
-    let audience = &state.audience;
-
-    let jwk = match jwkset.find(&kid) {
-        Some(k) => k,
-        None => {
-            drop(jwkset);
-            let mut jwkset = state.google_keys.write().await;
-            *jwkset = get_google_jwks().await?;
-
-            let jwk = jwkset.find(&kid).ok_or(AuthError::InvalidKid)?;
-            return Ok(decode_google_token_data(token, jwk, audience)?);
-        }
-    };
-
-    Ok(decode_google_token_data(token, jwk, audience)?)
-}
-
-fn decode_google_token_data(
-    token: &str,
-    jwk: &Jwk,
-    audience: &str,
-) -> Result<TokenData<UserClaims>, Error> {
-    let mut validation = jwt::Validation::new(jwt::Algorithm::RS256);
-    validation.set_issuer(&["https://accounts.google.com", "accounts.google.com"]);
-    validation.set_audience(&[audience]);
-
-    jwt::decode::<UserClaims>(token, &jwt::DecodingKey::from_jwk(jwk)?, &validation)
-}
-
-pub async fn get_google_jwks() -> Result<jwt::jwk::JwkSet, reqwest::Error> {
-    let response = reqwest::get("https://www.googleapis.com/oauth2/v3/certs").await?;
-    response.json().await
-}
-
 #[derive(serde::Serialize, serde::Deserialize, PartialEq, Eq, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
 enum TokenKind {
@@ -279,7 +237,7 @@ enum TokenKind {
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
-struct LocalTokenClaims {
+struct AppTokenClaims {
     sub: String,
     email: String,
     name: String,
@@ -291,7 +249,7 @@ struct LocalTokenClaims {
     exp: u64,
 }
 
-impl LocalTokenClaims {
+impl AppTokenClaims {
     fn to_user_claims(&self) -> UserClaims {
         UserClaims {
             email: self.email.clone(),
@@ -301,25 +259,46 @@ impl LocalTokenClaims {
     }
 }
 
+#[derive(serde::Deserialize)]
+struct GoogleProfileClaims {
+    email: Option<String>,
+    name: Option<String>,
+    picture: Option<String>,
+}
+
+impl TryFrom<GoogleProfileClaims> for UserClaims {
+    type Error = AuthError;
+
+    fn try_from(value: GoogleProfileClaims) -> Result<Self, Self::Error> {
+        Ok(Self {
+            email: value.email.ok_or(AuthError::MissingClaim("email"))?,
+            name: value.name.ok_or(AuthError::MissingClaim("name"))?,
+            picture: value.picture.ok_or(AuthError::MissingClaim("picture"))?,
+        })
+    }
+}
+
 #[derive(thiserror::Error, Debug)]
 pub enum AuthError {
     #[error("Auth token not found on the request")]
     TokenNotPresent,
-    #[error("Invalid KeyId ('kid') on token")]
-    InvalidKid,
+    #[error("Missing claim on id_token: {0}")]
+    MissingClaim(&'static str),
+    #[error("OpenID validation failed: {0}")]
+    OpenId(String),
     #[error("Invalid token type")]
     InvalidTokenType,
     #[error("Invalid cookie header")]
     InvalidCookie,
     #[error("Invalid token: ({0})")]
     JwtValidation(#[from] jwt::errors::Error),
-    #[error("Error during certificate retrieval: ({0})")]
-    IO(#[from] reqwest::Error),
 }
 
 impl IntoResponse for AuthError {
     fn into_response(self) -> axum::response::Response {
-        let body = Json(json!({"error": self.to_string() }));
+        let err = self.to_string();
+        tracing::error!("{err}");
+        let body = Json(json!({"error":  err}));
         (StatusCode::UNAUTHORIZED, body).into_response()
     }
 }

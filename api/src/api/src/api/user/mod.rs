@@ -5,7 +5,7 @@ use crate::application::ApiState;
 
 mod auth;
 
-pub use auth::{auth, get_google_jwks};
+pub use auth::auth;
 
 pub fn router(state: ApiState) -> Router {
     let auth = axum::middleware::from_fn_with_state(state.clone(), auth::auth);

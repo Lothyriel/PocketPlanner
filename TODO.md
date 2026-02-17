@@ -1,6 +1,5 @@
 # TODO
 
-- Replace manual Google JWK fetch/validation with openidconnect
 - Review SQLite tables and queries for correctness and indexing.
 - Backend: move models to an `entities` folder and detach them from `infra`.
 - Review the Google auth flow in the frontend. (and the refresh token process)
