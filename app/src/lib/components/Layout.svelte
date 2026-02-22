@@ -32,8 +32,8 @@
             <a
               href={item.path}
               use:route={{
-                active: { class: 'bg-secondary text-foreground', absolute: true },
-                default: { class: 'text-muted-foreground', absolute: true },
+                active: { class: ['bg-secondary', 'text-foreground'], absolute: true },
+                default: { class: ['text-muted-foreground'], absolute: true },
               }}
               class="hover:text-foreground rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
             >
@@ -62,11 +62,14 @@
           href={item.path}
           use:route={{
             active: {
-              class:
-                'bg-primary text-primary-foreground shadow-[0_6px_16px_-10px_color-mix(in_oklch,var(--primary)_60%,transparent)]',
+              class: [
+                'bg-primary',
+                'text-primary-foreground',
+                'shadow-[0_6px_16px_-10px_color-mix(in_oklch,var(--primary)_60%,transparent)]',
+              ],
               absolute: true,
             },
-            default: { class: 'text-muted-foreground', absolute: true },
+            default: { class: ['text-muted-foreground'], absolute: true },
           }}
           class="rounded-xl px-3 py-2.5 text-center text-sm font-medium transition-all duration-200"
         >
